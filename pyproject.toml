@@ -1,0 +1,30 @@
+[project]
+name = "applai"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Davide Andreoli",email = "davide.andreoli@icloud.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "streamlit (>=1.49.1,<2.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "pydantic[email] (>=2.11.7,<3.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "app"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.30.1"
+pre-commit = "^4.3.0"
+pytest = "^8.4.1"
+pyright = "^1.1.404"
+coverage = "^7.10.6"
+ruff = "^0.12.11"
