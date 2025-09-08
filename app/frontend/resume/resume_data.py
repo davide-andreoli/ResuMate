@@ -6,6 +6,9 @@ from app.models.experience import Experience
 from app.models.education import Education
 from app.models.link import Link
 from app.models.skill import Skill
+from app.models.certification import Certification
+from app.models.project import Project
+from app.models.langauge import Language
 from app.frontend.renderer import render_pydantic_section
 
 
@@ -63,6 +66,11 @@ else:
     render_pydantic_section("Education", Education, resume, section_key="education")
     render_pydantic_section("Links", Link, resume, section_key="links")
     render_pydantic_section("Skills", Skill, resume, section_key="skills")
+    render_pydantic_section("Projects", Project, resume, section_key="projects")
+    render_pydantic_section(
+        "Certifications", Certification, resume, section_key="certifications"
+    )
+    render_pydantic_section("Languages", Language, resume, section_key="languages")
 
     st.subheader("YAML Preview")
     yaml_string = yaml_manager.dump_resume_to_yaml_string(resume)

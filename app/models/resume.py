@@ -5,6 +5,9 @@ from app.models.education import Education
 from app.models.experience import Experience
 from app.models.link import Link
 from app.models.skill import Skill
+from app.models.certification import Certification
+from app.models.project import Project
+from app.models.langauge import Language
 
 
 class Resume(BaseModel):
@@ -15,9 +18,14 @@ class Resume(BaseModel):
     phone: Optional[str] = None
     location: Optional[str] = None
     summary: Optional[str] = None
+    created_at: date = Field(default_factory=date.today)
+    updated_at: date = Field(default_factory=date.today)
     links: List[Link] = Field(default_factory=list[Link])
     skills: List[Skill] = Field(default_factory=list[Skill])
     experience: List[Experience] = Field(default_factory=list[Experience])
     education: List[Education] = Field(default_factory=list[Education])
+    certifications: List[Certification] = Field(default_factory=list[Certification])
+    projects: List[Project] = Field(default_factory=list[Project])
+    languages: List[Language] = Field(default_factory=list[Language])
     # schema versioning for future migrations
     schema_version: int = 1

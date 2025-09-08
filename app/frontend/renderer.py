@@ -1,8 +1,19 @@
 import streamlit as st
 from pydantic import BaseModel, HttpUrl
 from datetime import date, datetime
-from typing import Type, List, Any, Union, get_origin, get_args
+from typing import Type, List, Any, Union, get_origin, get_args, Literal
 from enum import Enum
+
+# TODO: Refactor this: all typing logic should stay inside get_field_type, which should return a string or literal
+# All renderes should be single functions to be more maintainable
+
+
+def is_optional(field: BaseModel) -> bool:
+    """Check if a field is Optional[...]"""
+    if get_origin(field.annotation) is Union:
+        args = get_args(field.annotation)
+        return type(None) in args
+    return False
 
 
 def get_field_type(field):
@@ -86,12 +97,36 @@ def render_field_widget(field_name: str, field, current_value: Any, widget_key: 
 
     elif isinstance(field_type, type) and issubclass(field_type, Enum):
         options = list(field_type)
+
+        if is_optional(field):
+            options = [""] + options
+
         default_index = 0
-        if current_value and current_value in options:
+        if current_value in options:
             default_index = options.index(current_value)
+
         selected = st.selectbox(
             field_label, options, index=default_index, key=widget_key
         )
+        if is_optional(field) and selected == "":
+            return None
+        return selected
+
+    elif get_origin(field_type) is Literal:
+        options = list(get_args(field_type))
+
+        if is_optional(field):
+            options = [""] + options
+
+        default_index = 0
+        if current_value in options:
+            default_index = options.index(current_value)
+
+        selected = st.selectbox(
+            field_label, options, index=default_index, key=widget_key
+        )
+        if is_optional(field) and selected == "":
+            return None
         return selected
 
     elif get_origin(field_type) is list:
@@ -148,11 +183,7 @@ def render_pydantic_section(
         with col1:
             with st.expander(expander_title, expanded=False):
                 for field_name, field in model.model_fields.items():
-                    if (
-                        field_name == "schema_version"
-                        or field_name == "link_type"
-                        or field_name == "link_icon"
-                    ):
+                    if field_name == "schema_version":
                         continue
                     current_value = getattr(item, field_name)
                     widget_key = f"{section_key}_{i}_{field_name}"
