@@ -126,6 +126,48 @@ def render_field_widget(field_name: str, field, current_value: Any, widget_key: 
     )
 
 
+def initialize_section_data(section_key: str, model: Type[BaseModel], resume_obj: Any):
+    """Initialize session state data for a section if not already present."""
+    if f"{section_key}_data" not in st.session_state:
+        current_data = getattr(resume_obj, section_key, [])
+        if current_data:
+            st.session_state[f"{section_key}_data"] = [
+                item.model_dump() if hasattr(item, "model_dump") else item.__dict__
+                for item in current_data
+            ]
+        else:
+            st.session_state[f"{section_key}_data"] = []
+
+
+def get_section_data(section_key: str) -> List[dict]:
+    """Get section data from session state."""
+    return st.session_state.get(f"{section_key}_data", [])
+
+
+def add_section_item(section_key: str, model: Type[BaseModel]):
+    """Add a new item to a section."""
+    new_instance = model()
+    new_data = (
+        new_instance.model_dump()
+        if hasattr(new_instance, "model_dump")
+        else new_instance.__dict__
+    )
+    st.session_state[f"{section_key}_data"].append(new_data)
+
+
+def delete_section_item(section_key: str, index: int):
+    """Delete an item from a section."""
+    st.session_state[f"{section_key}_data"].pop(index)
+
+
+def section_data_to_pydantic_objects(
+    section_key: str, model: Type[BaseModel]
+) -> List[BaseModel]:
+    """Convert section data from session state back to Pydantic objects."""
+    data = get_section_data(section_key)
+    return [model(**item_data) for item_data in data]
+
+
 def render_pydantic_section(
     title: str,
     model: Type[BaseModel],
@@ -137,26 +179,24 @@ def render_pydantic_section(
 
     section_key = section_key or title.lower()
 
-    if section_key not in st.session_state:
-        current_data = getattr(resume_obj, section_key, [])
-        st.session_state[section_key] = current_data or []
+    initialize_section_data(section_key, model, resume_obj)
 
     if st.button(f"➕ Add {title}", key=f"add_{section_key}"):
-        new_instance = model()
-        st.session_state[section_key].append(new_instance)
+        add_section_item(section_key, model)
         st.rerun()
 
-    items: List[BaseModel] = st.session_state[section_key]
+    section_data = get_section_data(section_key)
 
-    if not items:
+    if not section_data:
         st.info(
             f"No {title.lower()} entries yet. Click the '➕ Add {title}' button to add one."
         )
+        setattr(resume_obj, section_key, [])
         return
 
-    for i, item in enumerate(items):
-        if field_for_title and hasattr(item, field_for_title):
-            field_value = getattr(item, field_for_title, "")
+    for i, item_data in enumerate(section_data):
+        if field_for_title and field_for_title in item_data:
+            field_value = item_data.get(field_for_title, "")
             expander_title = f"{title} {i+1}: {field_value or 'New'}"
         else:
             expander_title = f"{title} {i+1}"
@@ -168,17 +208,15 @@ def render_pydantic_section(
                 for field_name, field in model.model_fields.items():
                     if field_name == "schema_version":
                         continue
-                    widget_key = f"{section_key}_{i}_{field_name}"
 
-                    if widget_key in st.session_state:
-                        current_value = st.session_state[widget_key]
-                    else:
-                        current_value = getattr(item, field_name)
+                    widget_key = f"{section_key}_{i}_{field_name}"
+                    current_value = item_data.get(field_name)
 
                     new_value = render_field_widget(
                         field_name, field, current_value, widget_key
                     )
-                    setattr(item, field_name, new_value)
+
+                    st.session_state[f"{section_key}_data"][i][field_name] = new_value
 
         with col2:
             st.write("")
@@ -187,7 +225,8 @@ def render_pydantic_section(
                 key=f"delete_{section_key}_{i}",
                 help=f"Delete this {title.lower()}",
             ):
-                st.session_state[section_key].pop(i)
+                delete_section_item(section_key, i)
                 st.rerun()
 
-    setattr(resume_obj, section_key, st.session_state[section_key])
+    pydantic_objects = section_data_to_pydantic_objects(section_key, model)
+    setattr(resume_obj, section_key, pydantic_objects)
