@@ -9,7 +9,7 @@ from app.models.skill import Skill
 from app.models.certification import Certification
 from app.models.project import Project
 from app.models.langauge import Language
-from app.frontend.renderer import render_pydantic_section
+from app.frontend.ui_utils.section_renderer import render_pydantic_section
 
 
 def load_default_resume() -> Resume:

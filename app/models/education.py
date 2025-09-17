@@ -10,4 +10,5 @@ class Education(BaseModel):
     end: Optional[date] = None
     details: Optional[str] = None
     location: Optional[str] = None
+    visible: bool = True
     schema_version: int = 1

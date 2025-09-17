@@ -11,4 +11,5 @@ class Experience(BaseModel):
     location: Optional[str] = None
     summary: Optional[str] = None
     bullets: List[str] = Field(default_factory=list)
+    visible: bool = True
     schema_version: int = 1

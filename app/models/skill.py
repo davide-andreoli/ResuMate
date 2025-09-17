@@ -7,6 +7,7 @@ class Skill(BaseModel):
     level: Optional[Literal["Beginner", "Intermediate", "Advanced", "Expert"]] = (
         "Beginner"
     )
+    visible: bool = True
     schema_version: int = 1
 
     @property

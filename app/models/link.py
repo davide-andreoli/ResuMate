@@ -6,6 +6,7 @@ class Link(BaseModel):
     label: str = ""
     url: HttpUrl = HttpUrl("https://example.com")
     link_type: Literal["website", "github", "linkedin"] = "website"
+    visible: bool = True
     schema_version: int = 1
 
     @property

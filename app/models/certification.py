@@ -9,4 +9,5 @@ class Certification(BaseModel):
     certification_date: Optional[date] = None
     credential_id: Optional[str] = None
     link: Optional[HttpUrl] = None
+    visible: bool = True
     schema_version: int = 1

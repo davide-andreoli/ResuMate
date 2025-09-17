@@ -3,6 +3,12 @@ from pydantic import BaseModel, HttpUrl
 from datetime import date, datetime
 from typing import Type, List, Any, Union, get_origin, get_args, Literal
 from enum import Enum
+from app.frontend.ui_utils.field_renderers import (
+    render_text_area,
+    render_text_input,
+    render_int_input,
+    render_float_input,
+)
 
 # TODO: Refactor this: all typing logic should stay inside get_field_type, which should return a string or literal
 # All renderes should be single functions to be more maintainable
@@ -41,38 +47,15 @@ def render_field_widget(field_name: str, field, current_value: Any, widget_key: 
             keyword in field_name.lower()
             for keyword in ["details", "description", "summary", "notes"]
         ):
-            return st.text_area(field_label, current_value or "", key=widget_key)
+            return render_text_area(field_label, current_value or "", widget_key)
         else:
-            return st.text_input(field_label, current_value or "", key=widget_key)
+            return render_text_input(field_label, current_value or "", widget_key)
 
     elif field_type is int:
-        ge, le = None, None
-        for m in field.metadata:
-            if hasattr(m, "ge"):
-                ge = m.ge
-            if hasattr(m, "le"):
-                le = m.le
-        if ge is not None and le is not None:
-            return st.slider(
-                field_label,
-                min_value=ge,
-                max_value=le,
-                value=current_value or ge,
-                key=widget_key,
-            )
-        else:
-            return st.number_input(
-                field_label, value=current_value or 0, step=1, key=widget_key
-            )
+        return render_int_input(field, field_label, current_value, widget_key)
 
     elif field_type is float:
-        return st.number_input(
-            field_label,
-            value=current_value or 0.0,
-            step=0.01,
-            format="%.2f",
-            key=widget_key,
-        )
+        return render_float_input(field_label, current_value or 0.0, widget_key)
 
     elif field_type is bool:
         return st.checkbox(field_label, value=current_value or False, key=widget_key)
@@ -185,8 +168,12 @@ def render_pydantic_section(
                 for field_name, field in model.model_fields.items():
                     if field_name == "schema_version":
                         continue
-                    current_value = getattr(item, field_name)
                     widget_key = f"{section_key}_{i}_{field_name}"
+
+                    if widget_key in st.session_state:
+                        current_value = st.session_state[widget_key]
+                    else:
+                        current_value = getattr(item, field_name)
 
                     new_value = render_field_widget(
                         field_name, field, current_value, widget_key
