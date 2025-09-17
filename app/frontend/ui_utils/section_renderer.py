@@ -10,65 +10,88 @@ from app.frontend.ui_utils.field_renderers import (
     render_float_input,
 )
 
-# TODO: Refactor this: all typing logic should stay inside get_field_type, which should return a string or literal
-# All renderes should be single functions to be more maintainable
 
-
-def is_optional(field: BaseModel) -> bool:
+def is_optional(field) -> bool:
     """Check if a field is Optional[...]"""
     if get_origin(field.annotation) is Union:
-        args = get_args(field.annotation)
-        return type(None) in args
+        return type(None) in get_args(field.annotation)
     return False
 
 
-def get_field_type(field):
-    """Extract the actual type from a Pydantic field."""
+def get_field_type(field) -> str:
+    """
+    Normalize a Pydantic field into a simple type string.
+    Possible outputs:
+      "str", "str_long", "int", "float", "bool", "date", "datetime",
+      "url", "enum", "literal", "list_str", "unknown"
+    """
     field_type = field.annotation
 
     if get_origin(field_type) is Union:
-        args = get_args(field_type)
-        non_none_types = [arg for arg in args if arg is not type(None)]
+        non_none_types = [arg for arg in get_args(field_type) if arg is not type(None)]
         if len(non_none_types) == 1:
             field_type = non_none_types[0]
 
-    return field_type
+    if field_type is str:
+        if "longtext" in (field.description or "").lower():
+            return "str_long"
+        return "str"
+    if field_type is int:
+        return "int"
+    if field_type is float:
+        return "float"
+    if field_type is bool:
+        return "bool"
+    if field_type is date:
+        return "date"
+    if field_type is datetime:
+        return "datetime"
+    if field_type is HttpUrl:
+        return "url"
+    if isinstance(field_type, type) and issubclass(field_type, Enum):
+        return "enum"
+    if get_origin(field_type) is Literal:
+        return "literal"
+    if get_origin(field_type) is list and get_args(field_type) == (str,):
+        return "list_str"
+
+    return "unknown"
 
 
 def render_field_widget(field_name: str, field, current_value: Any, widget_key: str):
+    """Render a widget based on normalized field type."""
     field_type = get_field_type(field)
     field_label = field_name.replace("_", " ").title()
 
     if current_value is None:
         current_value = field.default if field.default is not ... else None
 
-    if field_type is str:
-        if any(
-            keyword in field_name.lower()
-            for keyword in ["details", "description", "summary", "notes"]
-        ):
-            return render_text_area(field_label, current_value or "", widget_key)
-        else:
-            return render_text_input(field_label, current_value or "", widget_key)
+    if field_type == "str":
+        return render_text_input(field_label, current_value or "", widget_key)
 
-    elif field_type is int:
+    elif field_type == "str_long":
+        return render_text_area(field_label, current_value or "", widget_key)
+
+    elif field_type == "int":
         return render_int_input(field, field_label, current_value, widget_key)
 
-    elif field_type is float:
+    elif field_type == "float":
         return render_float_input(field_label, current_value or 0.0, widget_key)
 
-    elif field_type is bool:
+    elif field_type == "bool":
         return st.checkbox(field_label, value=current_value or False, key=widget_key)
 
-    elif field_type is date:
-        default_date = current_value or date.today()
-        return st.date_input(field_label, value=default_date, key=widget_key)
+    elif field_type == "date":
+        return st.date_input(
+            field_label, value=current_value or date.today(), key=widget_key
+        )
 
-    elif field_type is datetime:
-        default_datetime = current_value or datetime.now()
-        return st.datetime_input(field_label, value=default_datetime, key=widget_key)
+    elif field_type == "datetime":
+        return st.datetime_input(
+            field_label, value=current_value or datetime.now(), key=widget_key
+        )
 
-    elif field_type is HttpUrl:
+    elif field_type == "url":
         url_value = st.text_input(
             f"{field_label} (URL)", current_value or "", key=widget_key
         )
@@ -78,48 +101,26 @@ def render_field_widget(field_name: str, field, current_value: Any, widget_key: 
             st.warning(f"Invalid URL: {url_value}")
             return current_value
 
-    elif isinstance(field_type, type) and issubclass(field_type, Enum):
-        options = list(field_type)
-
+    elif field_type in ["enum", "literal"]:
+        options = (
+            list(field.annotation.__members__.values())
+            if field_type == "enum"
+            else list(get_args(field.annotation))
+        )
         if is_optional(field):
             options = [""] + options
-
-        default_index = 0
-        if current_value in options:
-            default_index = options.index(current_value)
-
+        default_index = options.index(current_value) if current_value in options else 0
         selected = st.selectbox(
             field_label, options, index=default_index, key=widget_key
         )
-        if is_optional(field) and selected == "":
-            return None
-        return selected
+        return None if is_optional(field) and selected == "" else selected
 
-    elif get_origin(field_type) is Literal:
-        options = list(get_args(field_type))
-
-        if is_optional(field):
-            options = [""] + options
-
-        default_index = 0
-        if current_value in options:
-            default_index = options.index(current_value)
-
-        selected = st.selectbox(
-            field_label, options, index=default_index, key=widget_key
+    elif field_type == "list_str":
+        text_value = "\n".join(current_value or [])
+        text_input = st.text_area(
+            f"{field_label} (one per line)", text_value, key=widget_key
         )
-        if is_optional(field) and selected == "":
-            return None
-        return selected
-
-    elif get_origin(field_type) is list:
-        list_args = get_args(field_type)
-        if list_args and list_args[0] is str:
-            text_value = "\n".join(current_value) if current_value else ""
-            text_input = st.text_area(
-                f"{field_label} (one per line)", text_value, key=widget_key
-            )
-            return [line.strip() for line in text_input.split("\n") if line.strip()]
+        return [line.strip() for line in text_input.split("\n") if line.strip()]
 
     return st.text_area(
         f"{field_label} (text)", str(current_value or ""), key=widget_key
