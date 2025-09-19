@@ -60,7 +60,7 @@ if st.session_state["resume"] is None:
             keys_to_clear = [
                 key
                 for key in st.session_state.keys()
-                if key.endswith("_data") or key.startswith("basic_")
+                if str(key).endswith("_data") or str(key).startswith("basic_")
             ]
             for key in keys_to_clear:
                 del st.session_state[key]
@@ -75,7 +75,7 @@ if st.session_state["resume"] is None:
             keys_to_clear = [
                 key
                 for key in st.session_state.keys()
-                if key.endswith("_data") or key.startswith("basic_")
+                if str(key).endswith("_data") or str(key).startswith("basic_")
             ]
             for key in keys_to_clear:
                 del st.session_state[key]
@@ -93,7 +93,7 @@ if st.session_state["resume"] is None:
             keys_to_clear = [
                 key
                 for key in st.session_state.keys()
-                if key.endswith("_data") or key.startswith("basic_")
+                if str(key).endswith("_data") or str(key).startswith("basic_")
             ]
             for key in keys_to_clear:
                 del st.session_state[key]
@@ -141,7 +141,7 @@ else:
             keys_to_clear = [
                 key
                 for key in st.session_state.keys()
-                if key.endswith("_data") or key.startswith("basic_")
+                if str(key).endswith("_data") or str(key).startswith("basic_")
             ]
             for key in keys_to_clear:
                 del st.session_state[key]

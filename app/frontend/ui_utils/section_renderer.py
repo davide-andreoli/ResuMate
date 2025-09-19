@@ -1,7 +1,8 @@
 import streamlit as st
 from pydantic import BaseModel, HttpUrl
+from pydantic.fields import FieldInfo
 from datetime import date, datetime
-from typing import Type, List, Any, Union, get_origin, get_args, Literal
+from typing import Type, List, Any, Union, get_origin, get_args, Literal, Dict, Optional
 from enum import Enum
 from app.frontend.ui_utils.field_renderers import (
     render_text_area,
@@ -11,14 +12,14 @@ from app.frontend.ui_utils.field_renderers import (
 )
 
 
-def is_optional(field) -> bool:
+def is_optional(field: FieldInfo) -> bool:
     """Check if a field is Optional[...]"""
     if get_origin(field.annotation) is Union:
         return type(None) in get_args(field.annotation)
     return False
 
 
-def get_field_type(field) -> str:
+def get_field_type(field: FieldInfo) -> str:
     """
     Normalize a Pydantic field into a simple type string.
     Possible outputs:
@@ -58,7 +59,9 @@ def get_field_type(field) -> str:
     return "unknown"
 
 
-def render_field_widget(field_name: str, field, current_value: Any, widget_key: str):
+def render_field_widget(
+    field_name: str, field: FieldInfo, current_value: Any, widget_key: str
+) -> Union[str, int, float, bool, date, datetime, HttpUrl, list[str], None]:
     """Render a widget based on normalized field type."""
     field_type = get_field_type(field)
     field_label = field_name.replace("_", " ").title()
@@ -87,9 +90,17 @@ def render_field_widget(field_name: str, field, current_value: Any, widget_key: 
         )
 
     elif field_type == "datetime":
-        return st.datetime_input(
-            field_label, value=current_value or datetime.now(), key=widget_key
+        selected_date = st.date_input(
+            field_label + " (date)",
+            value=(current_value or datetime.now()).date(),
+            key=f"{widget_key}_date",
         )
+        selected_time = st.time_input(
+            field_label + " (time)",
+            value=(current_value or datetime.now()).time(),
+            key=f"{widget_key}_time",
+        )
+        return datetime.combine(selected_date, selected_time)
 
     elif field_type == "url":
         url_value = st.text_input(
@@ -104,7 +115,7 @@ def render_field_widget(field_name: str, field, current_value: Any, widget_key: 
     elif field_type in ["enum", "literal"]:
         options = (
             list(field.annotation.__members__.values())
-            if field_type == "enum"
+            if field_type == "enum" and field.annotation is not None
             else list(get_args(field.annotation))
         )
         if is_optional(field):
@@ -140,7 +151,7 @@ def initialize_section_data(section_key: str, model: Type[BaseModel], resume_obj
             st.session_state[f"{section_key}_data"] = []
 
 
-def get_section_data(section_key: str) -> List[dict]:
+def get_section_data(section_key: str) -> List[Dict[str, Any]]:
     """Get section data from session state."""
     return st.session_state.get(f"{section_key}_data", [])
 
@@ -173,8 +184,8 @@ def render_pydantic_section(
     title: str,
     model: Type[BaseModel],
     resume_obj: Any,
-    field_for_title: str = None,
-    section_key: str = None,
+    field_for_title: Optional[str] = None,
+    section_key: Optional[str] = None,
 ):
     st.subheader(title)
 
