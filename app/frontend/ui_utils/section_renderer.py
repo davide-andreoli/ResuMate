@@ -19,6 +19,32 @@ def is_optional(field: FieldInfo) -> bool:
     return False
 
 
+def extract_literal_choices(annotation: Any) -> List[str]:
+    """
+    Extract the possible values from a Literal[...] or Optional[Literal[...]] annotation.
+
+    Args:
+        annotation: A typing annotation, e.g. Literal["A", "B"] or Optional[Literal["A", "B"]].
+
+    Returns:
+        A list of string choices extracted from the Literal.
+    """
+    args = get_args(annotation)
+    if not args:
+        return []
+
+    # Case: Optional[Literal[...]] → (Literal[...], NoneType)
+    if len(args) == 2 and type(None) in args:
+        literal_type = next(a for a in args if a is not type(None))
+        return [str(opt) for opt in get_args(literal_type)]
+
+    # Case: plain Literal[...] → ("A", "B", "C")
+    if getattr(annotation, "__origin__", None) is Literal:
+        return [str(opt) for opt in args]
+
+    return []
+
+
 def get_field_type(field: FieldInfo) -> str:
     """
     Normalize a Pydantic field into a simple type string.
@@ -113,13 +139,14 @@ def render_field_widget(
             return current_value
 
     elif field_type in ["enum", "literal"]:
-        options = (
-            list(field.annotation.__members__.values())
-            if field_type == "enum" and field.annotation is not None
-            else list(get_args(field.annotation))
-        )
+        if field_type == "enum" and field.annotation is not None:
+            options = list(field.annotation.__members__.values())
+        else:  # literal
+            options = extract_literal_choices(field.annotation)
+
         if is_optional(field):
             options = [""] + options
+
         default_index = options.index(current_value) if current_value in options else 0
         selected = st.selectbox(
             field_label, options, index=default_index, key=widget_key

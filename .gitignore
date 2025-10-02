@@ -1,4 +1,6 @@
 documents/resumes/*
+!documents/resumes/Jane Doe.yaml
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

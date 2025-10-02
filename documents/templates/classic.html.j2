@@ -27,7 +27,7 @@
     {% if resume.email %}<div>{{ resume.email }}</div>{% endif %}
     {% if resume.phone %}<div>{{ resume.phone }}</div>{% endif %}
     {% if resume.location %}<div>{{ resume.location }}</div>{% endif %}
-    {% for link in resume.links if link.visible %}
+    {% for link in resume.links %}
       <div>
         <a href="{{ link.url }}">
           {% if link.link_icon %}<img src="{{ link.link_icon }}" alt="{{ link.label }}" style="height:12px;vertical-align:middle;margin-right:4px;">{% endif %}
@@ -48,7 +48,7 @@
   <div class="section">
     <h2>Skills</h2>
     <p>
-      {% for s in resume.skills if s.visible %}
+      {% for s in resume.skills %}
         {{ s.name }}{% if s.level %} ({{ s.level }}){% endif %}{% if not loop.last %}, {% endif %}
       {% endfor %}
     </p>
@@ -58,7 +58,7 @@
   {% if resume.experience %}
   <div class="section">
     <h2>Experience</h2>
-    {% for exp in resume.experience if exp.visible %}
+    {% for exp in resume.experience %}
       <div>
         <strong>{{ exp.role }}</strong>, {{ exp.company }}
         — <span class="subtle">{{ exp.start or '' }}{% if exp.start or exp.end %} — {% endif %}{{ exp.end or 'Present' }}</span>
@@ -75,7 +75,7 @@
   {% if resume.projects %}
   <div class="section">
     <h2>Projects</h2>
-    {% for p in resume.projects if p.visible %}
+    {% for p in resume.projects %}
       <div>
         <strong>{{ p.name }}</strong>
         {% if p.link %} — <a href="{{ p.link }}">{{ p.link }}</a>{% endif %}
@@ -89,7 +89,7 @@
   {% if resume.education %}
   <div class="section">
     <h2>Education</h2>
-    {% for edu in resume.education if edu.visible %}
+    {% for edu in resume.education %}
       <div>
         <strong>{{ edu.degree }}</strong>, {{ edu.institution }}
         {% if edu.location %}<span class="subtle"> — {{ edu.location }}</span>{% endif %}
@@ -103,7 +103,7 @@
   {% if resume.certifications %}
   <div class="section">
     <h2>Certifications</h2>
-    {% for cert in resume.certifications if cert.visible %}
+    {% for cert in resume.certifications %}
       <div>
         <strong>{{ cert.name }}</strong>
         {% if cert.issuer %} — {{ cert.issuer }}{% endif %}
@@ -118,7 +118,7 @@
   <div class="section">
     <h2>Languages</h2>
     <p>
-      {% for lang in resume.languages if lang.visible %}
+      {% for lang in resume.languages %}
         {{ lang.name }} ({{ lang.proficiency }}){% if not loop.last %}, {% endif %}
       {% endfor %}
     </p>

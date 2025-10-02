@@ -13,13 +13,13 @@ storage = get_storage()
 yaml_manager = get_yaml_manager()
 
 
-def render_template(resume_path, template_path):
-    resume = storage.get_resume(resume_path)
+def render_template(resume_name: str, template_name: str):
+    resume = storage.get_resume(resume_name).visible_only()
     env = Environment(
         loader=FileSystemLoader(storage.template_folder),
         autoescape=select_autoescape(["html", "xml"]),
     )
-    template = env.get_template(template_path)
+    template = env.get_template(template_name)
     return template.render(resume=resume)
 
 
@@ -53,4 +53,12 @@ st.subheader("Preview")
 pdf_bytes = html_to_pdf_bytes(html)
 
 st.pdf(io.BytesIO(pdf_bytes))
-st.html(html)
+st.download_button(
+    "Download PDF",
+    data=io.BytesIO(pdf_bytes),
+    file_name=selected_resume + ".pdf",
+    mime="application/pdf",
+)
+st.download_button(
+    "Download HTML", data=html, file_name=selected_resume + ".html", mime="text/html"
+)

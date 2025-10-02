@@ -1,0 +1,114 @@
+name: Jane Doe
+date_of_birth: '2000-01-01'
+title: Software Engineer
+email: jane.doe@example.com
+phone: '+1-555-123-4567'
+created_at: '2025-10-01'
+updated_at: '2025-10-01'
+
+links:
+  - label: Personal Website
+    url: https://janedoe.dev
+    link_type: website
+    visible: true
+    schema_version: 1
+  - label: LinkedIn
+    url: https://linkedin.com/in/janedoe
+    link_type: linkedin
+    visible: true
+    schema_version: 1
+  - label: GitHub
+    url: https://github.com/janedoe
+    link_type: github
+    visible: true
+    schema_version: 1
+
+skills:
+  - name: Python
+    level: Advanced
+    visible: true
+    schema_version: 1
+  - name: JavaScript
+    level: Intermediate
+    visible: true
+    schema_version: 1
+  - name: SQL
+    level: Intermediate
+    visible: true
+    schema_version: 1
+
+experience:
+  - company: Tech Solutions Inc.
+    role: Backend Developer
+    start: '2023-01-01'
+    end: '2025-09-30'
+    location: Remote
+    summary: Built and maintained scalable backend services for SaaS applications.
+    bullets:
+      - Designed REST APIs for internal and external integrations
+      - Improved database queries, reducing response time by 30%
+      - Collaborated with front-end engineers to implement new features
+    visible: true
+    schema_version: 1
+  - company: Code Labs
+    role: Software Engineering Intern
+    start: '2022-06-01'
+    end: '2022-12-31'
+    location: San Francisco, CA
+    summary: Assisted in developing internal tools and automated testing.
+    bullets:
+      - Built CI/CD pipelines to improve deployment speed
+      - Wrote unit and integration tests for API services
+    visible: true
+    schema_version: 1
+
+education:
+  - institution: University of Example
+    degree: B.Sc. Computer Science
+    start: '2018-09-01'
+    end: '2022-05-31'
+    details: Focus in Software Engineering and Data Structures
+    location: Example City, USA
+    visible: true
+    schema_version: 1
+
+certifications:
+  - name: AWS Certified Developer – Associate
+    issuer: Amazon Web Services
+    certification_date: '2024-08-15'
+    credential_id: 'AWS-DEV-12345'
+    link: https://aws.amazon.com/certification
+    visible: true
+    schema_version: 1
+
+projects:
+  - name: Task Manager App
+    description: A full-stack web application for task and project management.
+    technologies:
+      - React
+      - Node.js
+      - MongoDB
+    link: https://github.com/janedoe/task-manager
+    visible: true
+    schema_version: 1
+  - name: Data Visualizer
+    description: Python-based tool to generate interactive data visualizations.
+    technologies:
+      - Python
+      - Pandas
+      - Plotly
+    link: https://janedoe.dev/dataviz
+    visible: true
+    schema_version: 1
+
+languages:
+  - name: English
+    proficiency: Native
+    visible: true
+    schema_version: 1
+  - name: Spanish
+    proficiency: Conversational
+    visible: true
+    schema_version: 1
+
+schema_version: 1
