@@ -186,12 +186,3 @@ st.download_button(
 st.download_button(
     "Download HTML", data=html, file_name=selected_resume + ".html", mime="text/html"
 )
-st.download_button(
-    "Download PDF",
-    data=io.BytesIO(pdf_bytes),
-    file_name=selected_resume + ".pdf",
-    mime="application/pdf",
-)
-st.download_button(
-    "Download HTML", data=html, file_name=selected_resume + ".html", mime="text/html"
-)
