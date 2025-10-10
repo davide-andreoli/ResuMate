@@ -9,7 +9,7 @@ import os
 import re
 import yaml
 from typing import Dict, Optional, Any, List, Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 if sys.platform.startswith("win"):
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
@@ -38,7 +38,7 @@ class TemplateVariable(BaseModel):
 def parse_template_variables(template_name: str) -> Dict[str, TemplateVariable]:
     """
     Look for a YAML front-matter block at the top of the template and load variable
-    declarations from key 'variables'. Returns a dict of VariableDefinition instances.
+    declarations from key 'variables'. Returns a dict of TemplateVariable instances.
     """
     path = os.path.join(storage.template_folder, template_name)
     try:
@@ -55,18 +55,18 @@ def parse_template_variables(template_name: str) -> Dict[str, TemplateVariable]:
         raw_vars = (
             front_matter.get("variables", {}) if isinstance(front_matter, dict) else {}
         )
+        if not isinstance(raw_vars, dict):
+            return {}
+
         normalized: Dict[str, TemplateVariable] = {}
-        for name, definition in (raw_vars or {}).items():
-            if isinstance(definition, dict):
-                normalized[name] = TemplateVariable(**definition)
-            else:
-                # treat simple scalar/list as default value
-                if isinstance(definition, list):
-                    normalized[name] = TemplateVariable(
-                        type="multiselect", default=definition, options=definition
-                    )
-                else:
-                    normalized[name] = TemplateVariable(default=definition)
+        for name, definition in raw_vars.items():
+            if not isinstance(definition, dict):
+                continue
+            try:
+                normalized[name] = TemplateVariable.parse_obj(definition)
+            except ValidationError:
+                continue
+
         return normalized
     except Exception:
         return {}
@@ -177,6 +177,15 @@ st.subheader("Preview")
 pdf_bytes = html_to_pdf_bytes(html)
 
 st.pdf(io.BytesIO(pdf_bytes))
+st.download_button(
+    "Download PDF",
+    data=io.BytesIO(pdf_bytes),
+    file_name=selected_resume + ".pdf",
+    mime="application/pdf",
+)
+st.download_button(
+    "Download HTML", data=html, file_name=selected_resume + ".html", mime="text/html"
+)
 st.download_button(
     "Download PDF",
     data=io.BytesIO(pdf_bytes),
