@@ -51,19 +51,15 @@ def parse_template_variables(template_name: str) -> Dict[str, TemplateVariable]:
     if not front_matter_match:
         return {}
     try:
-        front_matter = yaml.safe_load(front_matter_match.group(1)) or {}
-        raw_vars = (
-            front_matter.get("variables", {}) if isinstance(front_matter, dict) else {}
-        )
-        if not isinstance(raw_vars, dict):
-            return {}
+        front_matter: Dict[str, Any] = yaml.safe_load(front_matter_match.group(1)) or {}
+        raw_vars: Dict[str, Any] = front_matter.get("variables", {})
 
         normalized: Dict[str, TemplateVariable] = {}
         for name, definition in raw_vars.items():
             if not isinstance(definition, dict):
                 continue
             try:
-                normalized[name] = TemplateVariable.parse_obj(definition)
+                normalized[name] = TemplateVariable.model_validate(definition)
             except ValidationError:
                 continue
 
@@ -99,7 +95,7 @@ def render_template(
         template = env.get_template(template_name)
     else:
         template = env.from_string(template_source)
-    render_context = {"resume": resume}
+    render_context: Dict[str, Any] = {"resume": resume}
     if template_variables:
         render_context["variables"] = template_variables
     return template.render(**render_context)
@@ -160,7 +156,7 @@ selected_template = st.selectbox(
 )
 
 template_variable_definitions = parse_template_variables(selected_template)
-template_variable_values = {}
+template_variable_values: Dict[str, Any] = {}
 if template_variable_definitions:
     st.subheader("Template Options")
     for variable_key, variable_definition in template_variable_definitions.items():
