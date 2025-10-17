@@ -7,11 +7,12 @@ authors = [
 ]
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<4"
 dependencies = [
-    "streamlit (>=1.49.1,<2.0.0)",
+    "streamlit[pdf] (>=1.50.0,<2.0.0)",
     "python-dotenv (>=1.1.1,<2.0.0)",
-    "pydantic[email] (>=2.11.7,<3.0.0)"
+    "pydantic[email] (>=2.11.7,<3.0.0)",
+    "playwright (>=1.55.0,<2.0.0)",
 ]
 
 [tool.poetry]

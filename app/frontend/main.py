@@ -8,5 +8,7 @@ def landing():
     st.markdown("# ApplAI")
 
 
-pages = st.navigation({"Landing": [landing], "Resume": ["resume/resume_data.py"]})
+pages = st.navigation(
+    {"Landing": [landing], "Resume": ["resume/resume_data.py", "resume/templates.py"]}
+)
 pages.run()

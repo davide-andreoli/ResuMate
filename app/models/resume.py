@@ -29,3 +29,43 @@ class Resume(BaseModel):
     languages: List[Language] = Field(default_factory=list[Language])
     # schema versioning for future migrations
     schema_version: int = 1
+
+    def visible_only(self) -> "Resume":
+        """
+        Return a deep copy of this Resume where each top-level collection
+        contains only items with is_visible == True.
+        Items without an is_visible attribute are kept by default.
+        """
+        filtered = self.model_copy(deep=True)
+        filtered.links = [
+            link for link in filtered.links if getattr(link, "is_visible", True)
+        ]
+        filtered.skills = [
+            skill for skill in filtered.skills if getattr(skill, "is_visible", True)
+        ]
+        filtered.experience = [
+            experience_item
+            for experience_item in filtered.experience
+            if getattr(experience_item, "is_visible", True)
+        ]
+        filtered.education = [
+            education_item
+            for education_item in filtered.education
+            if getattr(education_item, "is_visible", True)
+        ]
+        filtered.certifications = [
+            certification
+            for certification in filtered.certifications
+            if getattr(certification, "is_visible", True)
+        ]
+        filtered.projects = [
+            project
+            for project in filtered.projects
+            if getattr(project, "is_visible", True)
+        ]
+        filtered.languages = [
+            language
+            for language in filtered.languages
+            if getattr(language, "is_visible", True)
+        ]
+        return filtered
