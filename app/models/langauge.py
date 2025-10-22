@@ -1,9 +1,8 @@
 from typing import Literal
-from pydantic import BaseModel
+from app.models.cv_item import CvItem
 
 
-class Language(BaseModel):
+class Language(CvItem):
+    id: str = CvItem.id_field()
     name: str = ""
     proficiency: Literal["Basic", "Conversational", "Fluent", "Native"] = "Basic"
-    visible: bool = True
-    schema_version: int = 1

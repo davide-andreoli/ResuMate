@@ -1,16 +1,16 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import HttpUrl
 from typing import Optional, Literal
 import os
 import base64
 import mimetypes
+from app.models.cv_item import CvItem
 
 
-class Link(BaseModel):
+class Link(CvItem):
+    id: str = CvItem.id_field()
     label: str = ""
     url: HttpUrl = HttpUrl("https://example.com")
     link_type: Literal["website", "github", "linkedin"] = "website"
-    visible: bool = True
-    schema_version: int = 1
 
     @property
     def link_icon(self) -> Optional[str]:

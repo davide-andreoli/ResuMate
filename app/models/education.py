@@ -1,9 +1,10 @@
-from pydantic import BaseModel
 from typing import Optional
 from datetime import date
+from app.models.cv_item import CvItem
 
 
-class Education(BaseModel):
+class Education(CvItem):
+    id: str = CvItem.id_field()
     institution: str = ""
     degree: str = ""
     start: Optional[date] = None
