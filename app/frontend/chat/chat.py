@@ -1,5 +1,5 @@
 import streamlit as st
-from app.api.deps import get_assistant
+from app.frontend.dependencies import get_assistant
 
 st.title("Chat")
 
@@ -24,6 +24,7 @@ if prompt:
     with st.chat_message("assistant"):
         stream = assistant.stream(prompt=prompt)
         for chunk in stream:
-            st.write(chunk[0].content)
+            print(type(chunk))
+            st.write(chunk)
 
     st.session_state.messages.append({"role": "assistant", "content": response})

@@ -11,7 +11,8 @@ def landing():
 pages = st.navigation(
     {
         "Landing": [landing],
-        "Resume": ["resume/resume_data.py", "resume/templates.py", "resume/chat.py"],
+        "Resume": ["resume/resume_data.py", "resume/templates.py"],
+        "Chat": ["chat/chat.py"],
     }
 )
 pages.run()
