@@ -5,7 +5,6 @@ from app.models.cv_item import CvItem
 
 
 class Certification(CvItem):
-    id: str = CvItem.id_field()
     name: str = ""
     issuer: Optional[str] = None
     certification_date: Optional[date] = None

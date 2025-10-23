@@ -5,7 +5,6 @@ from app.models.cv_item import CvItem
 
 
 class Experience(CvItem):
-    id: str = CvItem.id_field()
     company: str = ""
     role: str = ""
     start: Optional[date] = None

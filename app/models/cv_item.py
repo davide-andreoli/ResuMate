@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 import secrets
 import string
+from typing import Any
 
 
 def short_id(prefix: str = "", length: int = 8) -> str:
@@ -14,8 +15,13 @@ class CvItem(BaseModel):
     visible: bool = True
     schema_version: int = 1
 
-    @classmethod
-    def id_field(cls):
-        """Generate a default_factory for class-specific ID prefixes."""
+    @model_validator(mode="before")
+    def ensure_id(cls, data: Any) -> Any:
+        """Ensure an id exists; compute prefix from the actual model class name."""
+        if not isinstance(data, dict):
+            return data
+        if data.get("id"):
+            return data
         prefix = cls.__name__.lower()[:3] + "_"
-        return Field(default_factory=lambda: short_id(prefix))
+        data["id"] = short_id(prefix)
+        return data

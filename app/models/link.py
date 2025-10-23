@@ -7,7 +7,6 @@ from app.models.cv_item import CvItem
 
 
 class Link(CvItem):
-    id: str = CvItem.id_field()
     label: str = ""
     url: HttpUrl = HttpUrl("https://example.com")
     link_type: Literal["website", "github", "linkedin"] = "website"

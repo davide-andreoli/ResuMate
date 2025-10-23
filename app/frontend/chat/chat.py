@@ -19,12 +19,14 @@ if prompt:
 
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    response = f"Echo: {prompt}"
-
     with st.chat_message("assistant"):
         stream = assistant.stream(prompt=prompt)
+        message_placeholder = st.empty()
+        full_text = ""
         for chunk in stream:
-            print(type(chunk))
-            st.write(chunk)
+            full_text += chunk
+            message_placeholder.markdown(full_text)
 
-    st.session_state.messages.append({"role": "assistant", "content": response})
+    st.session_state.messages.append(
+        {"role": "assistant", "content": message_placeholder}
+    )

@@ -3,7 +3,6 @@ from app.models.cv_item import CvItem
 
 
 class Skill(CvItem):
-    id: str = CvItem.id_field()
     name: str = ""
     level: Optional[Literal["Beginner", "Intermediate", "Advanced", "Expert"]] = (
         "Beginner"

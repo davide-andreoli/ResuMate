@@ -2,9 +2,11 @@ from typing import Iterator, Any
 from app.core.agents.builder import get_model, ModelConfig
 from langchain.tools import tool, ToolRuntime
 from langchain.agents import create_agent
+from langgraph.types import StreamMode
 from app.core.storage import LocalDocumentStorage
 from app.core.agents.common import SupervisorRuntimeContext
 from app.core.agents.resume_content_editor import resume_content_editor_tool
+from langchain.messages import AIMessageChunk
 
 
 SUPERVISOR_AGENT_PROMPT = (
@@ -45,11 +47,19 @@ class ApplAISupervisor:
 
     # TODO: Update this to be a better generator
     def stream(
-        self, prompt: str, stream_mode: str = "messages"
+        self, prompt: str, stream_mode: StreamMode = "messages"
     ) -> Iterator[dict[str, Any] | Any]:
-        return self.agent.stream(
+        stream = self.agent.stream(
             input={
                 "messages": [{"role": "user", "content": prompt}],
             },
+            stream_mode=stream_mode,
             context=SupervisorRuntimeContext(document_storage=self.document_storage),
         )
+
+        for chunk in stream:
+            if stream_mode == "messages":
+                if isinstance(chunk[0], AIMessageChunk):
+                    yield chunk[0].content
+            else:
+                yield chunk
