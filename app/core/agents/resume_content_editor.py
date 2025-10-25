@@ -7,7 +7,7 @@ from app.models.resume import ResumeElement
 
 RESUME_CONTENT_EDITOR_AGENT_PROMPT = (
     "You are a resume content editor. "
-    "Your job is to help users improve their resumes by providing suggestions and edits."
+    "Your job is to help users improve their resumes by analyzing their content and providing suggestions and edits."
     "You should ask clarifying questions if the user's request is ambiguous."
     "Always confirm what changes will be made before applying them."
 )

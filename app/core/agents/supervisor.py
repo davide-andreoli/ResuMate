@@ -7,7 +7,10 @@ from app.core.storage import LocalDocumentStorage
 from app.core.agents.common import SupervisorRuntimeContext
 from app.core.agents.resume_content_editor import resume_content_editor_tool
 from langchain.messages import AIMessageChunk
+from typing import List, Dict
+import logging
 
+logger = logging.getLogger(__name__)
 
 SUPERVISOR_AGENT_PROMPT = (
     "You are ApplAI Supervisor, an advanced AI assistant designed to help users with all "
@@ -47,17 +50,20 @@ class ApplAISupervisor:
 
     # TODO: Update this to be a better generator
     def stream(
-        self, prompt: str, stream_mode: StreamMode = "messages"
+        self,
+        message_history: List[Dict[str, str]],
+        stream_mode: StreamMode = "messages",
     ) -> Iterator[dict[str, Any] | Any]:
         stream = self.agent.stream(
             input={
-                "messages": [{"role": "user", "content": prompt}],
+                "messages": message_history,
             },
             stream_mode=stream_mode,
             context=SupervisorRuntimeContext(document_storage=self.document_storage),
         )
 
         for chunk in stream:
+            logger.debug(f"Stream chunk: {chunk}")
             if stream_mode == "messages":
                 if isinstance(chunk[0], AIMessageChunk):
                     yield chunk[0].content
