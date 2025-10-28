@@ -7,7 +7,7 @@ from app.core.storage import LocalDocumentStorage
 from app.core.agents.common import SupervisorRuntimeContext
 from app.core.agents.resume_content_editor import resume_content_editor_tool
 from langchain.messages import AIMessageChunk
-from typing import List, Dict
+from typing import List, Dict, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,6 +17,9 @@ SUPERVISOR_AGENT_PROMPT = (
     "aspects of resume creation and improvement. You have access to a variety of specialized "
     "agents to assist with this process. Each agent has a specific role and expertise, and you "
     "should delegate tasks to them as needed to provide the best possible assistance to the user."
+    "When delegating tasks, ensure that you provide clear instructions and context to the agents, "
+    "do not assume that an agent has prior knowledge of the user's requests or history. "
+    "If a resume is not specified in the context it means that the user has not created one yet, so ask them to create one using the menu on the side. "
     "This process should be transparent to the user; always communicate with the user directly."
 )
 
@@ -43,7 +46,7 @@ class ApplAISupervisor:
         self.document_storage = document_storage
         self.agent = create_agent(
             get_model(ModelConfig()),
-            tools=[resume_content_editor_tool, list_resumes_tool],
+            tools=[resume_content_editor_tool],
             system_prompt=SUPERVISOR_AGENT_PROMPT,
             context_schema=SupervisorRuntimeContext,
         )
@@ -51,15 +54,21 @@ class ApplAISupervisor:
     # TODO: Update this to be a better generator
     def stream(
         self,
+        request: str,
         message_history: List[Dict[str, str]],
+        resume_name: Optional[str] = None,
         stream_mode: StreamMode = "messages",
     ) -> Iterator[dict[str, Any] | Any]:
+        prompt = f"Context: The resume this request refers to is: '{resume_name}'.\n\nRequest: {request}"
+        message_history.append({"role": "user", "content": prompt})
         stream = self.agent.stream(
             input={
                 "messages": message_history,
             },
             stream_mode=stream_mode,
-            context=SupervisorRuntimeContext(document_storage=self.document_storage),
+            context=SupervisorRuntimeContext(
+                document_storage=self.document_storage, resume_name=resume_name
+            ),
         )
 
         for chunk in stream:

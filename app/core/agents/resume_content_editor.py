@@ -14,20 +14,16 @@ RESUME_CONTENT_EDITOR_AGENT_PROMPT = (
 
 
 @tool
-def read_resume_content(
-    runtime: ToolRuntime[SupervisorRuntimeContext],
-    resume_name: str,
-) -> str:
+def read_resume_content(runtime: ToolRuntime[SupervisorRuntimeContext]) -> str:
     """
     Reads the content of a specific resume.
-
-    Args:
-        resume_name (str): The name of the resume to be read.
 
     Returns:
         str: The content of the specified resume.
     """
-    resume = runtime.context.document_storage.get_resume(resume_name)
+    if not runtime.context.resume_name:
+        return "No resume selected."
+    resume = runtime.context.document_storage.get_resume(runtime.context.resume_name)
     return resume.model_dump_json(indent=2)
 
 
@@ -36,7 +32,6 @@ def edit_resume_content(
     runtime: ToolRuntime[SupervisorRuntimeContext],
     element_id: str,
     new_content: ResumeElement,
-    resume_name: str,
 ) -> str:
     """
     Edits the content of a specific element in a resume.
@@ -44,12 +39,13 @@ def edit_resume_content(
     Args:
         element_id (str): The unique identifier of the resume element to be updated.
         new_content (ResumeElement): The new content to replace the existing element.
-        resume_name (str): The name of the resume to be modified.
 
     Returns:
         str: A message indicating whether the resume content was updated successfully or if the update failed.
     """
-    resume = runtime.context.document_storage.get_resume(resume_name)
+    if not runtime.context.resume_name:
+        return "No resume selected."
+    resume = runtime.context.document_storage.get_resume(runtime.context.resume_name)
     if resume.update_element_by_id(element_id, new_content):
         return "Resume content updated successfully."
     return "Failed to update resume content."
@@ -80,8 +76,11 @@ def resume_content_editor_tool(
     Returns:
         str: The output from the resume content editor agent, it can either be confirmation, questions, etc.
     """
+    if not runtime.context.resume_name:
+        return "No resume selected."
     result = resume_content_editor_agent.invoke(
-        {"messages": [{"role": "user", "content": request}]}
+        {"messages": [{"role": "user", "content": request}]},
+        context=runtime.context,
     )
 
     return result["messages"][-1].text
