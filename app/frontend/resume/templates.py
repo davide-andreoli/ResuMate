@@ -1,5 +1,5 @@
 import streamlit as st
-from app.frontend.dependencies import get_storage, get_yaml_manager
+from app.api.deps import get_storage, get_yaml_manager
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import asyncio
 import sys

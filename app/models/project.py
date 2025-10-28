@@ -1,11 +1,10 @@
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import Field, HttpUrl
 from typing import Optional, List
+from app.models.cv_item import CvItem
 
 
-class Project(BaseModel):
+class Project(CvItem):
     name: str = ""
     description: Optional[str] = None
     technologies: List[str] = Field(default_factory=list[str])
     link: Optional[HttpUrl] = None
-    visible: bool = True
-    schema_version: int = 1

@@ -1,14 +1,12 @@
-from pydantic import BaseModel
 from typing import Literal, Optional
+from app.models.cv_item import CvItem
 
 
-class Skill(BaseModel):
+class Skill(CvItem):
     name: str = ""
     level: Optional[Literal["Beginner", "Intermediate", "Advanced", "Expert"]] = (
         "Beginner"
     )
-    visible: bool = True
-    schema_version: int = 1
 
     @property
     def level_number(self) -> int:

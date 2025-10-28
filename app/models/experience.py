@@ -1,9 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import Field
 from typing import List, Optional
 from datetime import date
+from app.models.cv_item import CvItem
 
 
-class Experience(BaseModel):
+class Experience(CvItem):
     company: str = ""
     role: str = ""
     start: Optional[date] = None
@@ -11,5 +12,3 @@ class Experience(BaseModel):
     location: Optional[str] = None
     summary: Optional[str] = None
     bullets: List[str] = Field(default_factory=list)
-    visible: bool = True
-    schema_version: int = 1
