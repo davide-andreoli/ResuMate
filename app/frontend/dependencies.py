@@ -1,5 +1,5 @@
 import streamlit as st
-from app.api.deps import (
+from app.api.dependencies.dependencies import (
     get_storage as _get_storage,
     get_yaml_manager as _get_yaml_manager,
     get_assistant as _get_assistant,
