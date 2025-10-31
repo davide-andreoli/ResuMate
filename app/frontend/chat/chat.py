@@ -1,13 +1,10 @@
 import streamlit as st
-from app.frontend.dependencies import get_assistant, get_storage
 import requests
-
-assistant = get_assistant()
-storage = get_storage()
 
 st.title("Chat")
 
-selected = st.selectbox("Choose from your resumes", options=storage.list_resumes())
+options = requests.get("http://127.0.0.1:8000/resume/list").json()
+selected = st.selectbox("Choose from your resumes", options=options["resumes"])
 
 conversation_id = f"chat_{selected}"
 # TODO: Add resume selection to context
@@ -16,7 +13,7 @@ if "messages" not in st.session_state:
     messages = requests.get(
         f"http://127.0.0.1:8000/memory/conversations/{conversation_id}/messages"
     ).json()
-    st.session_state.messages = messages
+    st.session_state.messages = messages["messages"]
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):

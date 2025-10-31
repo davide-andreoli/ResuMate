@@ -1,6 +1,6 @@
 import streamlit as st
 from app.models.resume import Resume
-from app.frontend.dependencies import get_storage, get_yaml_manager
+from app.frontend.dependencies import get_yaml_manager
 from datetime import date
 from app.models.experience import Experience
 from app.models.education import Education
@@ -10,6 +10,7 @@ from app.models.certification import Certification
 from app.models.project import Project
 from app.models.langauge import Language
 from app.frontend.ui_utils.section_renderer import render_pydantic_section
+import requests
 
 
 def load_default_resume() -> Resume:
@@ -40,7 +41,6 @@ def get_resume_with_current_data() -> Resume:
     return resume
 
 
-storage = get_storage()
 yaml_manager = get_yaml_manager()
 
 if "resume" not in st.session_state:
@@ -67,11 +67,14 @@ if st.session_state["resume"] is None:
             st.rerun()
 
     elif resume_source == "Select existing":
-        selected = st.selectbox(
-            "Choose from your resumes", options=storage.list_resumes()
-        )
+        options = requests.get("http://127.0.0.1:8000/resume/list").json()
+        selected = st.selectbox("Choose from your resumes", options=options["resumes"])
         if selected and st.button("Load selected"):
-            st.session_state["resume"] = storage.get_resume(resume_name=selected)
+            response = requests.get(f"http://127.0.0.1:8000/resume/{selected}")
+            if response.status_code == 200:
+                st.session_state["resume"] = Resume(**response.json())
+            else:
+                st.error("Failed to load resume.")
             keys_to_clear = [
                 key
                 for key in st.session_state.keys()
@@ -84,12 +87,19 @@ if st.session_state["resume"] is None:
     elif resume_source == "Upload file":
         uploaded_file = st.file_uploader("Upload YAML", type=["yml", "yaml"])
         if uploaded_file and st.button("Load uploaded file"):
-            storage.save_resume(
-                uploaded_file.read().decode("utf-8"), uploaded_file.name
+            response = requests.post(
+                "http://127.0.0.1:8000/resume/upload", files={"file": uploaded_file}
             )
-            st.session_state["resume"] = storage.get_resume(
-                resume_name=uploaded_file.name
+            if response.status_code != 200:
+                st.error("Failed to upload resume.")
+
+            response = requests.get(
+                f"http://127.0.0.1:8000/resume/{uploaded_file.name}"
             )
+
+            if response.status_code != 200:
+                st.error("Failed to load uploaded resume.")
+            st.session_state["resume"] = Resume(**response.json())
             keys_to_clear = [
                 key
                 for key in st.session_state.keys()
@@ -130,10 +140,14 @@ else:
     col1, col2 = st.columns([1, 1])
     with col1:
         if st.button("💾 Save Resume"):
-            final_resume = get_resume_with_current_data()
-            final_yaml = yaml_manager.dump_resume_to_yaml_string(final_resume)
-            storage.save_resume(final_yaml, final_resume.name + ".yaml")
-            st.success("Resume saved successfully!")
+            response = requests.post(
+                "http://127.0.0.1:8000/resume/save",
+                json={"resume": get_resume_with_current_data()},
+            )
+            if response.status_code == 200:
+                st.success("Resume saved successfully!")
+            else:
+                st.error("Failed to save resume.")
 
     with col2:
         if st.button("↩ Back to source selection"):
