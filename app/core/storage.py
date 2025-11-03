@@ -1,4 +1,3 @@
-from app.core.yaml_manager import YamlManager
 from app.models.resume import Resume
 import os
 
@@ -29,4 +28,4 @@ class LocalDocumentStorage:
     def get_resume(self, resume_name: str) -> Resume:
         resume_path = os.path.join(self.resume_folder, resume_name)
         with open(resume_path, "r") as f:
-            return YamlManager().load_resume_from_yaml_string(f.read())
+            return Resume.load_from_yaml_string(f.read())

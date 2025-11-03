@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 from app.api.routes.chat import chat_router
 from app.api.routes.memory import memory_router
 from app.api.routes.resume import resume_router
+from app.api.routes.template import template_router
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -27,3 +28,4 @@ async def redirect_root_to_docs() -> RedirectResponse:
 app.include_router(chat_router)
 app.include_router(memory_router)
 app.include_router(resume_router)
+app.include_router(template_router)

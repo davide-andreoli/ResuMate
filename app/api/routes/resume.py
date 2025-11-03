@@ -1,20 +1,12 @@
 from fastapi.responses import JSONResponse
 from fastapi import APIRouter, Depends, UploadFile, File
 from pydantic import BaseModel
-from app.api.dependencies.dependencies import get_storage, get_yaml_manager
+from app.api.dependencies.dependencies import get_storage
 from app.core.storage import LocalDocumentStorage
-from app.core.yaml_manager import YamlManager
 from app.models.resume import Resume
+from typing import List
 
 resume_router = APIRouter(prefix="/resume", tags=["resume"])
-
-
-class ListResumesResponse(BaseModel):
-    resumes: list[str]
-
-
-class ListTemplatesResponse(BaseModel):
-    templates: list[str]
 
 
 class ResumeUploadResponse(BaseModel):
@@ -22,27 +14,20 @@ class ResumeUploadResponse(BaseModel):
     status: str
 
 
-@resume_router.get("/list", response_model=ListResumesResponse)
+@resume_router.get("/list", response_model=List[str])
 async def list_resumes(storage: LocalDocumentStorage = Depends(get_storage)):
     resumes = storage.list_resumes()
-    return ListResumesResponse(resumes=resumes)
-
-
-@resume_router.get("/templates", response_model=ListTemplatesResponse)
-async def list_templates(storage: LocalDocumentStorage = Depends(get_storage)):
-    templates = storage.list_templates()
-    return ListTemplatesResponse(templates=templates)
+    return resumes
 
 
 @resume_router.post("/save", response_model=ResumeUploadResponse)
 async def save_resume(
     resume: Resume,
     storage: LocalDocumentStorage = Depends(get_storage),
-    yaml_manager: YamlManager = Depends(get_yaml_manager),
 ):
-    final_yaml = yaml_manager.dump_resume_to_yaml_string(resume)
+    final_yaml = resume.dump_to_yaml_string()
     storage.save_resume(final_yaml, resume.name + ".yaml")
-    return ResumeUploadResponse(filename=resume.name + ".yaml", status="uploaded")
+    return ResumeUploadResponse(filename=resume.name + ".yaml", status="saved")
 
 
 @resume_router.get("/{resume_name}", response_model=Resume)

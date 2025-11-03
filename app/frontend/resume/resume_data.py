@@ -1,6 +1,5 @@
 import streamlit as st
 from app.models.resume import Resume
-from app.frontend.dependencies import get_yaml_manager
 from datetime import date
 from app.models.experience import Experience
 from app.models.education import Education
@@ -41,8 +40,6 @@ def get_resume_with_current_data() -> Resume:
     return resume
 
 
-yaml_manager = get_yaml_manager()
-
 if "resume" not in st.session_state:
     st.session_state["resume"] = None
 
@@ -68,7 +65,7 @@ if st.session_state["resume"] is None:
 
     elif resume_source == "Select existing":
         options = requests.get("http://127.0.0.1:8000/resume/list").json()
-        selected = st.selectbox("Choose from your resumes", options=options["resumes"])
+        selected = st.selectbox("Choose from your resumes", options=options)
         if selected and st.button("Load selected"):
             response = requests.get(f"http://127.0.0.1:8000/resume/{selected}")
             if response.status_code == 200:
@@ -134,7 +131,7 @@ else:
     st.subheader("YAML Preview")
 
     current_resume = get_resume_with_current_data()
-    yaml_string = yaml_manager.dump_resume_to_yaml_string(current_resume)
+    yaml_string = current_resume.dump_to_yaml_string()
     st.code(yaml_string, language="yaml")
 
     col1, col2 = st.columns([1, 1])
