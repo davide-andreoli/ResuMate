@@ -40,7 +40,6 @@ if prompt:
             if chunk:
                 if isinstance(chunk, bytes):
                     chunk = chunk.decode("utf-8", errors="replace")
-                print(chunk)
                 full_text += chunk
                 message_placeholder.markdown(full_text)
 

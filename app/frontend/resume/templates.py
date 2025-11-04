@@ -1,7 +1,6 @@
 import streamlit as st
 import asyncio
 import sys
-from playwright.sync_api import sync_playwright
 import io
 from typing import Dict, Optional, Any, List, Literal
 from pydantic import BaseModel
@@ -60,16 +59,6 @@ def create_input_widget(key: str, definition: TemplateVariable):
     return st.text_input(label, value=str(default or ""))
 
 
-def html_to_pdf_bytes(html: str) -> bytes:
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page()
-        page.set_content(html, wait_until="networkidle")  # allow CSS/fonts to load
-        pdf_bytes = page.pdf(format="A4", print_background=True)  # keep colors
-        browser.close()
-        return pdf_bytes
-
-
 st.title("Templates & Export")
 
 st.subheader("Provide Resume YAML")
@@ -96,26 +85,34 @@ if template_variable_definitions:
             variable_key, variable_definition
         )
 
-
-html = requests.get(
-    f"http://127.0.0.1:8000/template/{selected_template}/render",
-    params={
-        "resume_name": selected_resume,
-        "template_variables": template_variable_values,
-    },
-).json()["html"]
-
 st.subheader("Preview")
 
-pdf_bytes = html_to_pdf_bytes(html)
+if st.button("Render Preview"):
+    with st.spinner("Rendering template and generating PDF..."):
+        html = requests.post(
+            f"http://127.0.0.1:8000/template/{selected_template}/render/{selected_resume}",
+            json={"template_variables": template_variable_values},
+        ).json()["html"]
 
-st.pdf(io.BytesIO(pdf_bytes))
-st.download_button(
-    "Download PDF",
-    data=io.BytesIO(pdf_bytes),
-    file_name=selected_resume + ".pdf",
-    mime="application/pdf",
-)
-st.download_button(
-    "Download HTML", data=html, file_name=selected_resume + ".html", mime="text/html"
-)
+        pdf_bytes = requests.post(
+            f"http://127.0.0.1:8000/template/{selected_template}/render/{selected_resume}/pdf",
+            json={"template_variables": template_variable_values},
+        ).content
+
+        st.pdf(io.BytesIO(pdf_bytes))
+        st.download_button(
+            "Download PDF",
+            data=io.BytesIO(pdf_bytes),
+            file_name=selected_resume + ".pdf",
+            mime="application/pdf",
+        )
+        st.download_button(
+            "Download HTML",
+            data=html,
+            file_name=selected_resume + ".html",
+            mime="text/html",
+        )
+else:
+    st.info(
+        "Click 'Render Preview' to generate HTML/PDF. This avoids blocking the UI during initial page build."
+    )

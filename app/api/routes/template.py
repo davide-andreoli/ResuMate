@@ -1,5 +1,6 @@
+import asyncio
 from fastapi.responses import JSONResponse
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Body, Response
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import BaseModel, ValidationError
 from app.api.dependencies.dependencies import get_storage
@@ -8,6 +9,11 @@ from typing import Dict, Literal, Optional, Any, List
 import os
 import re
 import yaml
+import logging
+from playwright.async_api import async_playwright
+import sys
+
+logger = logging.getLogger(__name__)
 
 template_router = APIRouter(prefix="/template", tags=["template"])
 
@@ -31,6 +37,10 @@ class TemplateVariable(BaseModel):
 
 class ListTemplatesResponse(BaseModel):
     templates: list[str]
+
+
+class RenderRequest(BaseModel):
+    template_variables: Optional[Dict[str, Any]] = None
 
 
 @template_router.get("/list", response_model=List[str])
@@ -73,16 +83,15 @@ async def get_template_variables(
         return dict[str, TemplateVariable]()
 
 
-@template_router.get("/{template_name}/render")
-async def render_template_endpoint(
-    resume_name: str,
+def _render_template_to_html(
     template_name: str,
-    template_variables: Optional[Dict[str, Any]] = None,
-    storage: LocalDocumentStorage = Depends(get_storage),
-):
+    resume_name: str,
+    template_variables: Optional[Dict[str, Any]],
+    storage: LocalDocumentStorage,
+) -> str:
     resume = storage.get_resume(resume_name=resume_name)
     if not resume:
-        return JSONResponse(status_code=404, content={"message": "Resume not found"})
+        return ""
 
     env = Environment(
         loader=FileSystemLoader(storage.template_folder),
@@ -103,6 +112,59 @@ async def render_template_endpoint(
     else:
         template = env.from_string(template_source)
     render_context: Dict[str, Any] = {"resume": resume}
-    if template_variables:
-        render_context["variables"] = template_variables
-    return JSONResponse(content={"html": template.render(**render_context)})
+    render_context["variables"] = template_variables or {}
+    return template.render(**render_context)
+
+
+@template_router.post("/{template_name}/render/{resume_name}")
+async def render_template_endpoint(
+    resume_name: str,
+    template_name: str,
+    payload: RenderRequest = Body(default=None),
+    storage: LocalDocumentStorage = Depends(get_storage),
+):
+    resume = storage.get_resume(resume_name=resume_name)
+    if not resume:
+        return JSONResponse(status_code=404, content={"message": "Resume not found"})
+
+    html = _render_template_to_html(
+        template_name,
+        resume_name,
+        payload.template_variables,
+        storage,
+    )
+    return JSONResponse(content={"html": html})
+
+
+# TODO: it might make sense to implement an endpoint that returns both HTML and PDF together
+@template_router.post("/{template_name}/render/{resume_name}/pdf")
+async def render_template_pdf_endpoint(
+    resume_name: str,
+    template_name: str,
+    payload: RenderRequest = Body(default=None),
+    storage: LocalDocumentStorage = Depends(get_storage),
+):
+    if sys.platform.startswith("win"):
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
+    resume = storage.get_resume(resume_name=resume_name)
+    if not resume:
+        return JSONResponse(status_code=404, content={"message": "Resume not found"})
+
+    html_content = _render_template_to_html(
+        template_name,
+        resume_name,
+        payload.template_variables,
+        storage,
+    )
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        page = await browser.new_page()
+        await page.set_content(
+            html_content, wait_until="networkidle"
+        )  # allow CSS/fonts to load
+        pdf_bytes = await page.pdf(format="A4", print_background=True)  # keep colors
+        await browser.close()
+
+    return Response(content=pdf_bytes, media_type="application/pdf")
