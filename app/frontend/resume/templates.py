@@ -1,21 +1,14 @@
 import streamlit as st
-from app.api.deps import get_storage, get_yaml_manager
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 import asyncio
 import sys
-from playwright.sync_api import sync_playwright
 import io
-import os
-import re
-import yaml
 from typing import Dict, Optional, Any, List, Literal
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
+import requests
+
 
 if sys.platform.startswith("win"):
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-
-storage = get_storage()
-yaml_manager = get_yaml_manager()
 
 
 class TemplateVariable(BaseModel):
@@ -33,72 +26,6 @@ class TemplateVariable(BaseModel):
     options: Optional[List[Any]] = None
     label: Optional[str] = None
     description: Optional[str] = None
-
-
-def parse_template_variables(template_name: str) -> Dict[str, TemplateVariable]:
-    """
-    Look for a YAML front-matter block at the top of the template and load variable
-    declarations from key 'variables'. Returns a dict of TemplateVariable instances.
-    """
-    path = os.path.join(storage.template_folder, template_name)
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            text = f.read()
-    except FileNotFoundError:
-        return {}
-
-    front_matter_match = re.match(r"\s*---\s*\n(.*?)\n---\s*\n", text, re.S)
-    if not front_matter_match:
-        return {}
-    try:
-        front_matter: Dict[str, Any] = yaml.safe_load(front_matter_match.group(1)) or {}
-        raw_vars: Dict[str, Any] = front_matter.get("variables", {})
-
-        normalized: Dict[str, TemplateVariable] = {}
-        for name, definition in raw_vars.items():
-            if not isinstance(definition, dict):
-                continue
-            try:
-                normalized[name] = TemplateVariable.model_validate(definition)
-            except ValidationError:
-                continue
-
-        return normalized
-    except Exception:
-        return {}
-
-
-def _load_template_without_front_matter(template_name: str) -> str:
-    path = os.path.join(storage.template_folder, template_name)
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            text = f.read()
-    except FileNotFoundError:
-        return ""
-    # remove leading YAML front-matter block between the first two --- lines
-    cleaned = re.sub(r"^\s*---\s*\n(.*?)\n---\s*\n", "", text, flags=re.S)
-    return cleaned
-
-
-def render_template(
-    resume_name: str,
-    template_name: str,
-    template_variables: Optional[Dict[str, Any]] = None,
-):
-    resume = storage.get_resume(resume_name).visible_only()
-    env = Environment(
-        loader=FileSystemLoader(storage.template_folder),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
-    template_source = _load_template_without_front_matter(template_name)
-    if not template_source:
-        template = env.get_template(template_name)
-    else:
-        template = env.from_string(template_source)
-    render_context: Dict[str, Any] = {"resume": resume}
-    if template_variables:
-        render_context["variables"] = template_variables
-    return template.render(**render_context)
 
 
 def create_input_widget(key: str, definition: TemplateVariable):
@@ -132,30 +59,24 @@ def create_input_widget(key: str, definition: TemplateVariable):
     return st.text_input(label, value=str(default or ""))
 
 
-def html_to_pdf_bytes(html: str) -> bytes:
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page()
-        page.set_content(html, wait_until="networkidle")  # allow CSS/fonts to load
-        pdf_bytes = page.pdf(format="A4", print_background=True)  # keep colors
-        browser.close()
-        return pdf_bytes
-
-
 st.title("Templates & Export")
 
 st.subheader("Provide Resume YAML")
-
-selected_resume = st.selectbox(
-    "Choose from your resumes", options=storage.list_resumes()
-)
+resume_options = requests.get("http://127.0.0.1:8000/resume/list").json()
+selected_resume = st.selectbox("Choose from your resumes", options=resume_options)
 
 st.subheader("Select Template")
-selected_template = st.selectbox(
-    "Choose from your resumes", options=storage.list_templates()
-)
+template_options = requests.get("http://127.0.0.1:8000/template/list").json()
+selected_template = st.selectbox("Choose from your templates", options=template_options)
 
-template_variable_definitions = parse_template_variables(selected_template)
+template_variable_definitions = requests.get(
+    f"http://127.0.0.1:8000/template/{selected_template}/variables"
+).json()
+template_variable_definitions = {
+    key: TemplateVariable.model_validate(value)
+    for key, value in template_variable_definitions.items()
+    if isinstance(value, dict)
+}
 template_variable_values: Dict[str, Any] = {}
 if template_variable_definitions:
     st.subheader("Template Options")
@@ -164,21 +85,34 @@ if template_variable_definitions:
             variable_key, variable_definition
         )
 
-html = render_template(
-    selected_resume, selected_template, template_variables=template_variable_values
-)
-
 st.subheader("Preview")
 
-pdf_bytes = html_to_pdf_bytes(html)
+if st.button("Render Preview"):
+    with st.spinner("Rendering template and generating PDF..."):
+        html = requests.post(
+            f"http://127.0.0.1:8000/template/{selected_template}/render/{selected_resume}",
+            json={"template_variables": template_variable_values},
+        ).json()["html"]
 
-st.pdf(io.BytesIO(pdf_bytes))
-st.download_button(
-    "Download PDF",
-    data=io.BytesIO(pdf_bytes),
-    file_name=selected_resume + ".pdf",
-    mime="application/pdf",
-)
-st.download_button(
-    "Download HTML", data=html, file_name=selected_resume + ".html", mime="text/html"
-)
+        pdf_bytes = requests.post(
+            f"http://127.0.0.1:8000/template/{selected_template}/render/{selected_resume}/pdf",
+            json={"template_variables": template_variable_values},
+        ).content
+
+        st.pdf(io.BytesIO(pdf_bytes))
+        st.download_button(
+            "Download PDF",
+            data=io.BytesIO(pdf_bytes),
+            file_name=selected_resume + ".pdf",
+            mime="application/pdf",
+        )
+        st.download_button(
+            "Download HTML",
+            data=html,
+            file_name=selected_resume + ".html",
+            mime="text/html",
+        )
+else:
+    st.info(
+        "Click 'Render Preview' to generate HTML/PDF. This avoids blocking the UI during initial page build."
+    )

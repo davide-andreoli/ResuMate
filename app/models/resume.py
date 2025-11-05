@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 from datetime import date
+
+import yaml
 from app.models.education import Education
 from app.models.experience import Experience
 from app.models.link import Link
@@ -98,3 +100,12 @@ class Resume(BaseModel):
                     self.updated_at = date.today()
                     return True
         return False
+
+    def dump_to_yaml_string(self) -> str:
+        data = self.model_dump(mode="json", exclude_none=True)
+        return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
+
+    @classmethod
+    def load_from_yaml_string(cls, yaml_string: str) -> "Resume":
+        data = yaml.safe_load(yaml_string) or {}
+        return cls.model_validate(data)
