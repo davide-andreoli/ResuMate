@@ -6,7 +6,7 @@ from typing import Optional
 @dataclass
 class SupervisorRuntimeContext:
     """
-    Context class for the ApplAI Supervisor agent runtime.
+    Context class for the ResuMate Supervisor agent runtime.
     """
 
     document_storage: LocalDocumentStorage

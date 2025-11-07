@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 SUPERVISOR_AGENT_PROMPT = (
-    "You are ApplAI Supervisor, an advanced AI assistant designed to help users with all "
+    "You are ResuMate Supervisor, an advanced AI assistant designed to help users with all "
     "aspects of resume creation and improvement. You have access to a variety of specialized "
     "agents to assist with this process. Each agent has a specific role and expertise, and you "
     "should delegate tasks to them as needed to provide the best possible assistance to the user."
@@ -36,7 +36,7 @@ def list_resumes_tool(runtime: ToolRuntime[SupervisorRuntimeContext]) -> str:
     return "\n".join(resumes)
 
 
-class ApplAISupervisor:
+class ResuMateSupervisore:
     def __init__(
         self,
         config: ModelConfig | None = None,

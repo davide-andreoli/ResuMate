@@ -8,7 +8,7 @@ load_dotenv()
 
 
 def landing():
-    st.markdown("# ApplAI")
+    st.markdown("# ResuMate")
 
 
 pages = st.navigation(
