@@ -21,6 +21,11 @@ dependencies = [
     "python-multipart (>=0.0.20,<0.0.21)",
 ]
 
+[project.scripts]
+resumate = "app.launcher:main"
+resumate-backend = "app.backend:main"
+resumate-frontend = "app.frontend:main"
+
 [tool.poetry]
 packages = [{include = "app"}]
 
