@@ -4,7 +4,7 @@ from pydantic.fields import FieldInfo
 from datetime import date, datetime
 from typing import Type, List, Any, Union, get_origin, get_args, Literal, Dict, Optional
 from enum import Enum
-from app.frontend.ui_utils.field_renderers import (
+from app.pages.ui_utils.field_renderers import (
     render_text_area,
     render_text_input,
     render_int_input,

@@ -4,6 +4,8 @@ Welcome to ResuMate, your intelligent companion for the entire job application p
 
 ResuMate helps you craft the perfect resume by allowing you to input your professional experience, experiment with different templates, and chat with AI agents that offer personalized feedback and edits.
 
+Note: as of right now, this is more intended to be a playground for me to test different agentic patterns and implementations, not e real product. This means that some features like support for more models will not be planned at the beginning.
+
 ## Features
 
 ### Core Features
@@ -61,3 +63,10 @@ Settings are managed with Pydantic Settings, you can find below the comprehensiv
 
 - experience data: Stored in a simple, portable .yaml file that’s easy to read and edit.
 - templates: built using Jinja — you can use the provided templates or create your own.
+
+## Roadmap
+
+- Planned features:
+  - add template expert agent
+  - add job search agent
+  - add resume creation agent

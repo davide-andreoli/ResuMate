@@ -6,14 +6,9 @@ logging.basicConfig(level=logging.DEBUG)
 
 load_dotenv()
 
-
-def landing():
-    st.markdown("# ResuMate")
-
-
 pages = st.navigation(
     {
-        "Landing": [landing],
+        "Home": ["home/home.py"],
         "Resume": ["resume/resume_data.py", "resume/templates.py"],
         "Chat": ["chat/chat.py"],
     }

@@ -6,7 +6,7 @@ from pathlib import Path
 def main():
     root = Path(__file__).parent
     backend_path = root / "api" / "main.py"
-    frontend_path = root / "frontend" / "main.py"
+    frontend_path = root / "pages" / "main.py"
 
     backend_proc = subprocess.Popen(
         [
