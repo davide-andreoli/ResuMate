@@ -1,5 +1,5 @@
 [project]
-name = "applai"
+name = "ResuMate"
 version = "0.1.0"
 description = ""
 authors = [
@@ -14,12 +14,16 @@ dependencies = [
     "pydantic[email] (>=2.11.7,<3.0.0)",
     "playwright (>=1.55.0,<2.0.0)",
     "pydantic-settings (>=2.11.0,<3.0.0)",
-    "langchain-google-vertexai (>=3.0.0,<4.0.0)",
-    "langchain (>=1.0.1,<2.0.0)",
     "fastapi (>=0.120.1,<0.121.0)",
     "uvicorn (>=0.38.0,<0.39.0)",
     "python-multipart (>=0.0.20,<0.0.21)",
+    "pydantic-ai (>=1.14.1,<2.0.0)",
 ]
+
+[project.scripts]
+resumate = "app.launcher:main"
+resumate-backend = "app.backend:main"
+resumate-frontend = "app.frontend:main"
 
 [tool.poetry]
 packages = [{include = "app"}]
