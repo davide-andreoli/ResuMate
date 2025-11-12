@@ -1,0 +1,41 @@
+[project]
+name = "ResuMate"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Davide Andreoli",email = "davide.andreoli@icloud.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.11,<4"
+dependencies = [
+    "streamlit[pdf] (>=1.50.0,<2.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "pydantic[email] (>=2.11.7,<3.0.0)",
+    "playwright (>=1.55.0,<2.0.0)",
+    "pydantic-settings (>=2.11.0,<3.0.0)",
+    "fastapi (>=0.120.1,<0.121.0)",
+    "uvicorn (>=0.38.0,<0.39.0)",
+    "python-multipart (>=0.0.20,<0.0.21)",
+    "pydantic-ai (>=1.14.1,<2.0.0)",
+]
+
+[project.scripts]
+resumate = "app.launcher:main"
+resumate-backend = "app.backend:main"
+resumate-frontend = "app.frontend:main"
+
+[tool.poetry]
+packages = [{include = "app"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.30.1"
+pre-commit = "^4.3.0"
+pytest = "^8.4.1"
+pyright = "^1.1.404"
+coverage = "^7.10.6"
+ruff = "^0.12.11"

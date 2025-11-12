@@ -1,0 +1,142 @@
+---
+variables:
+  accent_color:
+    type: color
+    default: "#1f6feb"
+---
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{{ resume.name }} — Resume</title>
+<style>
+.resume {
+  --resume-accent: {{ variables.accent_color | default('#1f6feb') }};
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  margin: 0;
+  line-height:1.5;
+}
+.resume header { background: var(--resume-accent); color: white; padding: 28px 40px; }
+.resume main { padding: 24px 40px; }
+.resume h1 { margin: 0 0 4px 0; }
+.resume h2 { margin: 22px 0 8px; text-transform: uppercase; font-size: 14px; letter-spacing: .08em; color:#333; border-bottom:1px solid #eee; padding-bottom:4px; }
+.resume .chips span { border:1px solid #ddd; padding:3px 10px; border-radius: 12px; margin: 3px; display:inline-block; font-size: 12px; background:#f9f9f9;}
+.resume ul { margin:6px 0 0 18px; }
+.resume .row { display:flex; flex-wrap:wrap; gap: 18px 40px; }
+.resume .muted { opacity:.75; font-size:90%; }
+.resume a { color: var(--resume-accent); text-decoration:none; }
+.resume a:hover { text-decoration:underline; }
+.resume section > div { margin-bottom:14px; }
+</style>
+</head>
+<body>
+<div class="resume">
+  <header>
+    <h1>{{ resume.name }}</h1>
+    {% if resume.title %}<div class="muted">{{ resume.title }}</div>{% endif %}
+    <div>
+      {% if resume.email %}<span>{{ resume.email }}</span>{% if resume.phone or resume.location %} · {% endif %}{% endif %}
+      {% if resume.phone %}<span>{{ resume.phone }}</span>{% if resume.location %} · {% endif %}{% endif %}
+      {% if resume.location %}<span>{{ resume.location }}</span>{% endif %}
+    </div>
+    <div>
+      {% for link in resume.links %}
+        <a href="{{ link.url }}">
+          {% if link.link_icon %}<img src="{{ link.link_icon }}" alt="{{ link.label }}" style="height:14px;vertical-align:middle;margin-right:4px;">{% endif %}
+          {{ link.label }}
+        </a>{% if not loop.last %} · {% endif %}
+      {% endfor %}
+    </div>
+  </header>
+  <main>
+    {% if resume.summary %}
+      <section>
+        <h2>Summary</h2>
+        <p>{{ resume.summary }}</p>
+      </section>
+    {% endif %}
+
+    {% if resume.skills %}
+      <section>
+        <h2>Skills</h2>
+        <div class="chips">
+          {% for s in resume.skills %}
+            <span>{{ s.name }}{% if s.level %} ({{ s.level }}){% endif %}</span>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    {% if resume.experience %}
+      <section>
+        <h2>Experience</h2>
+        {% for exp in resume.experience %}
+          <div>
+            <strong>{{ exp.role }}</strong> — {{ exp.company }}
+            <span class="muted">{{ exp.start or '' }}{% if exp.start or exp.end %} — {% endif %}{{ exp.end or 'Present' }}</span>
+            {% if exp.location %}<span class="muted"> · {{ exp.location }}</span>{% endif %}
+            {% if exp.summary %}<div>{{ exp.summary }}</div>{% endif %}
+            {% if exp.bullets %}
+              <ul>{% for b in exp.bullets %}<li>{{ b }}</li>{% endfor %}</ul>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </section>
+    {% endif %}
+
+    {% if resume.projects %}
+      <section>
+        <h2>Projects</h2>
+        {% for p in resume.projects %}
+          <div>
+            <strong>{{ p.name }}</strong>
+            {% if p.link %} — <a href="{{ p.link }}">{{ p.link }}</a>{% endif %}
+            {% if p.description %}<div>{{ p.description }}</div>{% endif %}
+            {% if p.technologies %}<div class="muted">Tech: {{ p.technologies | join(', ') }}</div>{% endif %}
+          </div>
+        {% endfor %}
+      </section>
+    {% endif %}
+
+    {% if resume.education %}
+      <section>
+        <h2>Education</h2>
+        {% for edu in resume.education %}
+          <div>
+            <strong>{{ edu.degree }}</strong>, {{ edu.institution }}
+            {% if edu.location %}<span class="muted"> — {{ edu.location }}</span>{% endif %}
+            <div class="muted">{{ edu.start or '' }}{% if edu.start or edu.end %} — {% endif %}{{ edu.end or '' }}</div>
+            {% if edu.details %}<div>{{ edu.details }}</div>{% endif %}
+          </div>
+        {% endfor %}
+      </section>
+    {% endif %}
+
+    {% if resume.certifications %}
+      <section>
+        <h2>Certifications</h2>
+        {% for cert in resume.certifications %}
+          <div>
+            <strong>{{ cert.name }}</strong>
+            {% if cert.issuer %} — {{ cert.issuer }}{% endif %}
+            {% if cert.certification_date %}<span class="muted"> ({{ cert.certification_date }})</span>{% endif %}
+            {% if cert.link %} — <a href="{{ cert.link }}">Credential</a>{% endif %}
+          </div>
+        {% endfor %}
+      </section>
+    {% endif %}
+
+    {% if resume.languages %}
+      <section>
+        <h2>Languages</h2>
+        <p>
+          {% for lang in resume.languages %}
+            {{ lang.name }} ({{ lang.proficiency }}){% if not loop.last %}, {% endif %}
+          {% endfor %}
+        </p>
+      </section>
+    {% endif %}
+  </main>
+</div>
+</body>
+</html>
