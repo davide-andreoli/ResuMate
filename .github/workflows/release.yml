@@ -6,10 +6,11 @@ on:
             - main
         types:
             - closed
+    workflow_dispatch:
 
 jobs:
     release:
-        if: github.event.pull_request.merged == true
+        if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
         name: Build and Create GitHub Release
         runs-on: ubuntu-latest
 
