@@ -3,8 +3,9 @@ from pathlib import Path
 from typing import Optional
 from pydantic_settings import BaseSettings
 from google.oauth2 import service_account
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_google_vertexai import ChatVertexAI
+from pydantic_ai.models.google import GoogleModel
+from pydantic_ai.providers.google import GoogleProvider
+from pydantic_ai.models import Model
 
 
 class ProviderName(str, Enum):
@@ -22,7 +23,7 @@ class ModelConfig(BaseSettings):
         env_file = ".env"
 
 
-def get_model(config: Optional[ModelConfig] = None) -> BaseChatModel:
+def get_model(config: Optional[ModelConfig] = None) -> Model:
     config = config or ModelConfig()
     if config.provider == ProviderName.google_vertex:
         credentials = None
@@ -31,11 +32,8 @@ def get_model(config: Optional[ModelConfig] = None) -> BaseChatModel:
                 str(config.credentials_file),
                 scopes=["https://www.googleapis.com/auth/cloud-platform"],
             )
-        model = ChatVertexAI(
-            model_name=config.model_name,
-            project=config.project_id,
-            credentials=credentials,
-        )
+        provider = GoogleProvider(credentials=credentials, project=config.project_id)
+        model = GoogleModel(config.model_name, provider=provider)
         return model
 
     raise ValueError(f"Unsupported provider: {config.provider}")

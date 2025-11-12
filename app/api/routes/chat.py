@@ -21,22 +21,14 @@ async def chat_endpoint(
     assistant: ResuMateSupervisore = Depends(get_assistant),
     memory: LocalMemory = Depends(get_memory),
 ):
-    memory.add_message(
-        chat_request.conversation_id, {"role": "user", "content": chat_request.request}
-    )
     message_history = memory.get_conversation(chat_request.conversation_id)
-    stream = assistant.stream(
-        message_history=message_history, resume_name=chat_request.resume_name
-    )
 
-    async def wrapper():
-        full_text = ""
-        async for chunk in stream:
-            full_text += chunk
-            yield chunk
-
-        memory.add_message(
-            chat_request.conversation_id, {"role": "assistant", "content": full_text}
+    return StreamingResponse(
+        assistant.stream(
+            user_prompt=chat_request.request,
+            message_history=message_history,
+            memory=memory,
+            conversation_id=chat_request.conversation_id,
+            resume_name=chat_request.resume_name,
         )
-
-    return StreamingResponse(wrapper())
+    )

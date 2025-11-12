@@ -1,5 +1,24 @@
+from typing import Dict, List
+from pydantic_ai import ModelMessage, ModelMessagesTypeAdapter
 import streamlit as st
 import requests
+
+
+def from_pydantic_to_openai(messages: List[ModelMessage]) -> List[Dict[str, str]]:
+    openai_messages: List[Dict[str, str]] = []
+    for message in messages:
+        parts = message.parts
+        for part in parts:
+            if part.part_kind == "user-prompt":
+                openai_messages.append({"role": "user", "content": part.content or ""})
+            elif part.part_kind == "system-prompt":
+                continue
+            elif part.part_kind == "text":
+                openai_messages.append(
+                    {"role": "assistant", "content": part.content or ""}
+                )
+    return openai_messages
+
 
 st.title("Chat")
 
@@ -13,7 +32,9 @@ if "messages" not in st.session_state:
     messages = requests.get(
         f"http://127.0.0.1:8000/memory/conversations/{conversation_id}/messages"
     ).json()
-    st.session_state.messages = messages
+    pydantic_messages = ModelMessagesTypeAdapter.validate_python(messages)
+    openai_messages = from_pydantic_to_openai(pydantic_messages)
+    st.session_state.messages = openai_messages
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):

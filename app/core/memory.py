@@ -13,5 +13,10 @@ class LocalMemory:
             self.storage[conversation_id] = []
         self.storage[conversation_id].append(message)
 
+    def add_messages(self, conversation_id: str, messages: List[Dict[str, str]]):
+        if conversation_id not in self.storage:
+            self.storage[conversation_id] = []
+        self.storage[conversation_id].extend(messages)
+
     def set_conversation(self, conversation_id: str, messages: List[Dict[str, str]]):
         self.storage[conversation_id] = messages

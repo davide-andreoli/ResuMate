@@ -1,8 +1,7 @@
-from langchain.agents import create_agent
 from app.core.agents.builder import get_model, ModelConfig
-from langchain.tools import tool, ToolRuntime
 from app.core.agents.common import SupervisorRuntimeContext
 from app.models.resume import ResumeElement
+from pydantic_ai import Agent, RunContext, Tool
 
 
 RESUME_CONTENT_EDITOR_AGENT_PROMPT = (
@@ -13,23 +12,21 @@ RESUME_CONTENT_EDITOR_AGENT_PROMPT = (
 )
 
 
-@tool
-def read_resume_content(runtime: ToolRuntime[SupervisorRuntimeContext]) -> str:
+def read_resume_content(context: RunContext[SupervisorRuntimeContext]) -> str:
     """
     Reads the content of a specific resume.
 
     Returns:
         str: The content of the specified resume.
     """
-    if not runtime.context.resume_name:
+    if not context.deps.resume_name:
         return "No resume selected."
-    resume = runtime.context.document_storage.get_resume(runtime.context.resume_name)
+    resume = context.deps.document_storage.get_resume(context.deps.resume_name)
     return resume.model_dump_json(indent=2)
 
 
-@tool
 def edit_resume_content(
-    runtime: ToolRuntime[SupervisorRuntimeContext],
+    context: RunContext[SupervisorRuntimeContext],
     element_id: str,
     new_content: ResumeElement,
 ) -> str:
@@ -43,24 +40,27 @@ def edit_resume_content(
     Returns:
         str: A message indicating whether the resume content was updated successfully or if the update failed.
     """
-    if not runtime.context.resume_name:
+    if not context.deps.resume_name:
         return "No resume selected."
-    resume = runtime.context.document_storage.get_resume(runtime.context.resume_name)
+    resume = context.deps.document_storage.get_resume(context.deps.resume_name)
     if resume.update_element_by_id(element_id, new_content):
         return "Resume content updated successfully."
     return "Failed to update resume content."
 
 
-resume_content_editor_agent = create_agent(
+resume_content_editor_agent = Agent(
     get_model(ModelConfig()),
-    tools=[edit_resume_content, read_resume_content],
+    deps_type=SupervisorRuntimeContext,
+    tools=[
+        Tool(edit_resume_content, takes_ctx=True),
+        Tool(read_resume_content, takes_ctx=True),
+    ],
     system_prompt=RESUME_CONTENT_EDITOR_AGENT_PROMPT,
 )
 
 
-@tool
-def resume_content_editor_tool(
-    runtime: ToolRuntime[SupervisorRuntimeContext], request: str
+async def resume_content_editor_tool(
+    context: RunContext[SupervisorRuntimeContext], request: str
 ) -> str:
     """
     Resume Content Editor specialist tool to help users improve their resume content.
@@ -76,11 +76,10 @@ def resume_content_editor_tool(
     Returns:
         str: The output from the resume content editor agent, it can either be confirmation, questions, etc.
     """
-    if not runtime.context.resume_name:
+    if not context.deps.resume_name:
         return "No resume selected."
-    result = resume_content_editor_agent.invoke(
-        {"messages": [{"role": "user", "content": request}]},
-        context=runtime.context,
+    result = await resume_content_editor_agent.run(
+        user_prompt=request, deps=context.deps, usage=context.usage
     )
 
-    return result["messages"][-1].text
+    return result.output
