@@ -56,13 +56,14 @@ if prompt:
             stream=True,
         )
         message_placeholder = st.empty()
-        full_text = ""
-        for chunk in stream.iter_content(decode_unicode=True):
+        full_response = ""
+        # Using PydanticAI, each chunk contains the whole message so far
+        for chunk in stream.iter_content(decode_unicode=True, chunk_size=4096):
             if chunk:
                 if isinstance(chunk, bytes):
                     chunk = chunk.decode("utf-8", errors="replace")
-                full_text += chunk
-                message_placeholder.markdown(full_text)
+                full_response = chunk
+                message_placeholder.markdown(full_response)
 
     st.session_state.messages.append({"role": "user", "content": prompt})
-    st.session_state.messages.append({"role": "assistant", "content": full_text})
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
