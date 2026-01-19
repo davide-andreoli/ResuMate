@@ -1,5 +1,9 @@
 from app.core.agents.builder import get_model, ModelConfig
-from app.core.agents.common import SupervisorRuntimeContext
+from app.core.agents.common import (
+    ModelHandoff,
+    ResumateAgentProvider,
+    SupervisorRuntimeContext,
+)
 from app.models.resume import ResumeElement
 from pydantic_ai import Agent, RunContext, Tool
 
@@ -50,21 +54,21 @@ def edit_resume_content(
     return "Failed to update resume content."
 
 
-def build_resume_content_editor_agent(
-    model_config: ModelConfig, agents_list: str
-) -> Agent[SupervisorRuntimeContext, str]:
-    return Agent(
-        get_model(model_config),
-        deps_type=SupervisorRuntimeContext,
-        tools=[
-            Tool(edit_resume_content, takes_ctx=True),
-            Tool(read_resume_content, takes_ctx=True),
-        ],
-        system_prompt=RESUME_CONTENT_EDITOR_AGENT_PROMPT.format(
-            agents_list=agents_list
-        ),
-    )
+class ResumeContentEditorAgentProvider(ResumateAgentProvider):
+    name = "resume_content_editor"
+    description = "A specialist agent that helps users improve their resume content."
 
-
-def get_resume_content_editor_handoff_info() -> str:
-    return "resume_content_editor: A specialist agent that helps users improve their resume content."
+    def build(
+        self, config: ModelConfig, agents_list: str
+    ) -> Agent[SupervisorRuntimeContext, str | ModelHandoff]:
+        return Agent(
+            get_model(config),
+            deps_type=SupervisorRuntimeContext,
+            tools=[
+                Tool(edit_resume_content, takes_ctx=True),
+                Tool(read_resume_content, takes_ctx=True),
+            ],
+            system_prompt=RESUME_CONTENT_EDITOR_AGENT_PROMPT.format(
+                agents_list=agents_list
+            ),
+        )

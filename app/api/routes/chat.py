@@ -24,7 +24,7 @@ async def chat_endpoint(
     message_history = memory.get_conversation(chat_request.conversation_id)
 
     return StreamingResponse(
-        assistant.stream(
+        assistant.run_conversation(
             user_prompt=chat_request.request,
             message_history=message_history,
             memory=memory,
