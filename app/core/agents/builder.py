@@ -17,6 +17,7 @@ class ModelConfig(BaseSettings):
     credentials_file: Optional[Path] = Path("credentials.json")
     project_id: Optional[str] = None
     model_name: str = "gemini-2.5-flash"
+    model_location: str = "europe-west4"
 
     class Config:
         env_prefix = "AGENT_"
@@ -32,7 +33,11 @@ def get_model(config: Optional[ModelConfig] = None) -> Model:
                 str(config.credentials_file),
                 scopes=["https://www.googleapis.com/auth/cloud-platform"],
             )
-        provider = GoogleProvider(credentials=credentials, project=config.project_id)
+        provider = GoogleProvider(
+            credentials=credentials,
+            project=config.project_id,
+            location=config.model_location,
+        )
         model = GoogleModel(config.model_name, provider=provider)
         return model
 

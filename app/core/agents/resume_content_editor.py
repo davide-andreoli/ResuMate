@@ -1,15 +1,21 @@
 from app.core.agents.builder import get_model, ModelConfig
-from app.core.agents.common import SupervisorRuntimeContext
+from app.core.agents.common import (
+    ModelHandoff,
+    ResumateAgentProvider,
+    SupervisorRuntimeContext,
+)
 from app.models.resume import ResumeElement
 from pydantic_ai import Agent, RunContext, Tool
 
 
-RESUME_CONTENT_EDITOR_AGENT_PROMPT = (
-    "You are a resume content editor. "
-    "Your job is to help users improve their resumes by analyzing their content and providing suggestions and edits."
-    "You should ask clarifying questions if the user's request is ambiguous."
-    "Always confirm what changes will be made before applying them."
-)
+RESUME_CONTENT_EDITOR_AGENT_PROMPT = """
+    Your name is resume_content_editor, you are part of an agent team called ResuMate.
+    Here is the list of agents you have access to:
+    {agents_list}
+    Your job is to help users improve their resumes by analyzing their content and providing suggestions and edits. You should ask clarifying questions if the user's request is ambiguous.
+    Always confirm what changes will be made before applying them.
+    If the user asks for help that is outside your scope, hand off the request to the appropriate agent.
+    """
 
 
 def read_resume_content(context: RunContext[SupervisorRuntimeContext]) -> str:
@@ -48,38 +54,21 @@ def edit_resume_content(
     return "Failed to update resume content."
 
 
-resume_content_editor_agent = Agent(
-    get_model(ModelConfig()),
-    deps_type=SupervisorRuntimeContext,
-    tools=[
-        Tool(edit_resume_content, takes_ctx=True),
-        Tool(read_resume_content, takes_ctx=True),
-    ],
-    system_prompt=RESUME_CONTENT_EDITOR_AGENT_PROMPT,
-)
+class ResumeContentEditorAgentProvider(ResumateAgentProvider):
+    name = "resume_content_editor"
+    description = "A specialist agent that helps users improve their resume content."
 
-
-async def resume_content_editor_tool(
-    context: RunContext[SupervisorRuntimeContext], request: str
-) -> str:
-    """
-    Resume Content Editor specialist tool to help users improve their resume content.
-    Here is some example requests this tool can help with:
-    - Analyzing and improving existing resume content
-    - Suggesting new sections or bullet points to enhance the resume
-    - Tailoring resume content for specific job descriptions
-    - Providing feedback on clarity, conciseness, and impact of resume language
-
-    Args:
-        request (str): The user's request for resume content editing.
-
-    Returns:
-        str: The output from the resume content editor agent, it can either be confirmation, questions, etc.
-    """
-    if not context.deps.resume_name:
-        return "No resume selected."
-    result = await resume_content_editor_agent.run(
-        user_prompt=request, deps=context.deps, usage=context.usage
-    )
-
-    return result.output
+    def build(
+        self, config: ModelConfig, agents_list: str
+    ) -> Agent[SupervisorRuntimeContext, str | ModelHandoff]:
+        return Agent(
+            get_model(config),
+            deps_type=SupervisorRuntimeContext,
+            tools=[
+                Tool(edit_resume_content, takes_ctx=True),
+                Tool(read_resume_content, takes_ctx=True),
+            ],
+            system_prompt=RESUME_CONTENT_EDITOR_AGENT_PROMPT.format(
+                agents_list=agents_list
+            ),
+        )

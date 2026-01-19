@@ -2,7 +2,7 @@ from fastapi.responses import StreamingResponse
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from app.api.dependencies.dependencies import get_assistant, get_memory
-from app.core.agents.supervisor import ResuMateSupervisore
+from app.core.agents.agent_runner import ResumateAgentRunner
 from typing import Optional
 from app.core.memory import LocalMemory
 
@@ -18,13 +18,13 @@ class ChatRequest(BaseModel):
 @chat_router.post("/", response_class=StreamingResponse)
 async def chat_endpoint(
     chat_request: ChatRequest,
-    assistant: ResuMateSupervisore = Depends(get_assistant),
+    assistant: ResumateAgentRunner = Depends(get_assistant),
     memory: LocalMemory = Depends(get_memory),
 ):
     message_history = memory.get_conversation(chat_request.conversation_id)
 
     return StreamingResponse(
-        assistant.stream(
+        assistant.run_conversation(
             user_prompt=chat_request.request,
             message_history=message_history,
             memory=memory,
