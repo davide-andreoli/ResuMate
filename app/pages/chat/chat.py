@@ -20,13 +20,23 @@ def from_pydantic_to_openai(messages: List[ModelMessage]) -> List[Dict[str, str]
     return openai_messages
 
 
+@st.dialog("Change Resume", on_dismiss="rerun")
+def change_resume(options: List[str]):
+    st.session_state.selected_resume = st.selectbox(
+        "Choose from your resumes",
+        options,
+        index=options.index(st.session_state.selected_resume),
+    )
+
+
 st.title("Chat")
 
-options = requests.get("http://127.0.0.1:8000/resume/list").json()
-selected = st.selectbox("Choose from your resumes", options=options)
+resume_list = requests.get("http://127.0.0.1:8000/resume/list").json()
+if "selected_resume" not in st.session_state:
+    st.session_state.selected_resume = resume_list[0] if resume_list else None
 
-conversation_id = f"chat_{selected}"
-# TODO: Add resume selection to context
+
+conversation_id = f"chat_{st.session_state.selected_resume}"
 
 if "messages" not in st.session_state:
     messages = requests.get(
@@ -36,34 +46,54 @@ if "messages" not in st.session_state:
     openai_messages = from_pydantic_to_openai(pydantic_messages)
     st.session_state.messages = openai_messages
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+chat_messages_container = st.container()
+
+
+with chat_messages_container:
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+context_container = st.popover("Chat context", width="stretch")
+with context_container:
+    # TODO: Add a tooltip with last working agent ?
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown(f"**Selected Resume:** {st.session_state.selected_resume}")
+    with col2:
+        if st.button("Change Resume"):
+            # TODO: The change resume button should open a modal with resume cards to select from
+            change_resume(resume_list)
+
 
 prompt = st.chat_input("Say something")
 if prompt:
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    with chat_messages_container:
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-    with st.chat_message("assistant"):
-        stream = requests.post(
-            "http://127.0.0.1:8000/chat/",
-            json={
-                "request": prompt,
-                "conversation_id": conversation_id,
-                "resume_name": selected,
-            },
-            stream=True,
-        )
-        message_placeholder = st.empty()
-        full_response = ""
-        # Using PydanticAI, each chunk contains the whole message so far
-        for chunk in stream.iter_content(decode_unicode=True, chunk_size=4096):
-            if chunk:
-                if isinstance(chunk, bytes):
-                    chunk = chunk.decode("utf-8", errors="replace")
-                full_response = chunk
-                message_placeholder.markdown(full_response)
+    with chat_messages_container:
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+    # TODO: try to use st.write_stream, but probably need to adapt the backend to yield in increments properly
+    stream = requests.post(
+        "http://127.0.0.1:8000/chat/",
+        json={
+            "request": prompt,
+            "conversation_id": conversation_id,
+            "resume_name": st.session_state.selected_resume,
+        },
+        stream=True,
+    )
+
+    full_response = ""
+    # Using PydanticAI, each chunk contains the whole message so far
+    for chunk in stream.iter_content(decode_unicode=True, chunk_size=4096):
+        if chunk:
+            if isinstance(chunk, bytes):
+                chunk = chunk.decode("utf-8", errors="replace")
+            full_response = chunk
+            message_placeholder.markdown(full_response)
 
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.session_state.messages.append({"role": "assistant", "content": full_response})
