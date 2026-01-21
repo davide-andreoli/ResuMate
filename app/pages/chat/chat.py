@@ -32,6 +32,11 @@ def change_resume(options: List[str]):
 st.title("Chat")
 
 resume_list = requests.get("http://127.0.0.1:8000/resume/list").json()
+
+if not resume_list:
+    st.info("No resumes found. Please create a resume first in the Resume section.")
+    st.stop()
+
 if "selected_resume" not in st.session_state:
     st.session_state.selected_resume = resume_list[0] if resume_list else None
 
