@@ -1,36 +1,11 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from app.api.dependencies.dependencies import get_memory
-from app.core.memory import LocalMemory
-from typing import Any, Dict, List, Optional
+from app.core.memory import Conversation, LocalMemory
+from typing import List
+from pydantic_ai import ModelMessage
 
 memory_router = APIRouter(prefix="/memory", tags=["memory"])
-
-
-class MessagePart(BaseModel):
-    content: Optional[str] = None
-    timestamp: Optional[str] = None
-    part_kind: Optional[str] = None
-    provider_name: Optional[str] = None
-    tool_name: Optional[str] = None
-    args: Optional[Dict[str, Any]] = None
-    tool_call_id: Optional[str] = None
-    id: Optional[str] = None
-    signature: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
-
-    class Config:
-        extra = "allow"
-
-
-class Message(BaseModel):
-    parts: List[MessagePart]
-    instructions: Optional[str] = None
-    usage: Optional[Dict[str, Any]] = None
-    provider_details: Optional[Dict[str, Any]] = None
-
-    class Config:
-        extra = "allow"
 
 
 class StatusResponse(BaseModel):
@@ -42,14 +17,33 @@ class AddUserMessageRequest(BaseModel):
     message: str
 
 
+@memory_router.get("/conversations", response_model=List[Conversation])
+async def get_conversations_endpoint(
+    memory: LocalMemory = Depends(get_memory),
+) -> List[Conversation]:
+    return memory.get_all_conversations()
+
+
+@memory_router.get("/conversations/{conversation_id}", response_model=Conversation)
+async def get_conversation_endpoint(
+    conversation_id: str, memory: LocalMemory = Depends(get_memory)
+) -> Conversation:
+    conversation = memory.get_conversation(conversation_id)
+    if conversation is None:
+        conversation = memory.create_conversation(conversation_id)
+    return conversation
+
+
 @memory_router.get(
-    "/conversations/{conversation_id}/messages", response_model=List[Message]
+    "/conversations/{conversation_id}/messages", response_model=List[ModelMessage]
 )
 async def chat_history_endpoint(
     conversation_id: str, memory: LocalMemory = Depends(get_memory)
-) -> List[Message]:
-    message_history = memory.get_conversation(conversation_id)
-    return message_history
+) -> List[ModelMessage]:
+    conversation = memory.get_conversation(conversation_id)
+    if conversation is None:
+        conversation = memory.create_conversation(conversation_id)
+    return conversation.messages
 
 
 @memory_router.post("/add_user_message", response_model=StatusResponse)

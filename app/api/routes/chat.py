@@ -21,7 +21,8 @@ async def chat_endpoint(
     assistant: ResumateAgentRunner = Depends(get_assistant),
     memory: LocalMemory = Depends(get_memory),
 ):
-    message_history = memory.get_conversation(chat_request.conversation_id)
+    conversation = memory.get_conversation(chat_request.conversation_id)
+    message_history = conversation.messages if conversation else []
 
     return StreamingResponse(
         assistant.run_conversation(

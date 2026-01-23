@@ -1,7 +1,7 @@
 from app.core.agents.builder import ModelConfig
 from app.core.agents.welcome_agent import WelcomeAgentProvider
 from pydantic_ai import Agent, ModelMessagesTypeAdapter
-from pydantic_ai.messages import ModelRequest, SystemPromptPart
+from pydantic_ai.messages import ModelRequest, SystemPromptPart, ModelMessage
 from pydantic_core import to_jsonable_python
 from app.core.memory import LocalMemory
 from app.core.storage import LocalDocumentStorage
@@ -11,7 +11,7 @@ from app.core.agents.common import (
     ModelHandoff,
 )
 from app.core.agents.resume_content_editor import ResumeContentEditorAgentProvider
-from typing import AsyncGenerator, List, Dict, Optional
+from typing import AsyncGenerator, List, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class ResumateAgentRunner:
     async def stream(
         self,
         user_prompt: str,
-        message_history: List[Dict[str, str]],
+        message_history: List[ModelMessage],
         memory: LocalMemory,
         conversation_id: str,
         resume_name: Optional[str] = None,
@@ -128,7 +128,7 @@ class ResumateAgentRunner:
     async def run_conversation(
         self,
         user_prompt: str,
-        message_history: List[Dict[str, str]],
+        message_history: List[ModelMessage],
         memory: LocalMemory,
         conversation_id: str,
         resume_name: Optional[str] = None,
