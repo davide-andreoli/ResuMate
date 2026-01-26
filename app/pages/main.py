@@ -12,7 +12,10 @@ pages = {
         st.Page("resume/resume_data.py", title="Edit Resume"),
         st.Page("resume/templates.py", title="Templates"),
     ],
-    "Chat": [st.Page("chat/chat.py", title="Chat")],
+    "Chat": [
+        # st.Page("chat/chat.py", title="Chat"),
+        st.Page("chat/conversations.py", title="Conversations"),
+    ],
 }
 
 pg = st.navigation(pages, expanded=True)

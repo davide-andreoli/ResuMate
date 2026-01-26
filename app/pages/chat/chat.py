@@ -40,8 +40,11 @@ if not resume_list:
 if "selected_resume" not in st.session_state:
     st.session_state.selected_resume = resume_list[0] if resume_list else None
 
-
-conversation_id = f"chat_{st.session_state.selected_resume}"
+if st.query_params.get("conversation_id"):
+    conversation_id = st.query_params["conversation_id"]
+else:
+    # Should not happen as we redirect from conversations page
+    raise ValueError("No conversation_id provided in query parameters")
 
 if "messages" not in st.session_state:
     messages = requests.get(
