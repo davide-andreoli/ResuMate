@@ -1,27 +1,24 @@
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
 from app.api.dependencies.dependencies import get_memory
-from app.core.memory import Conversation, LocalMemory
+from app.core.memory.memory import Conversation, ConversationNotFoundError, LocalMemory
 from typing import List
 from pydantic_ai import ModelMessage
+from fastapi.responses import JSONResponse
 
 memory_router = APIRouter(prefix="/memory", tags=["memory"])
-
-
-class StatusResponse(BaseModel):
-    status: str
-
-
-class AddUserMessageRequest(BaseModel):
-    conversation_id: str
-    message: str
 
 
 @memory_router.get("/conversations", response_model=List[Conversation])
 async def get_conversations_endpoint(
     memory: LocalMemory = Depends(get_memory),
 ) -> List[Conversation]:
-    return memory.get_all_conversations()
+    conversations = memory.get_all_conversations()
+    sorted_conversations = sorted(
+        conversations,
+        key=lambda conv: conv.updated_at,
+        reverse=True,
+    )
+    return sorted_conversations
 
 
 @memory_router.get("/conversations/{conversation_id}", response_model=Conversation)
@@ -30,8 +27,32 @@ async def get_conversation_endpoint(
 ) -> Conversation:
     conversation = memory.get_conversation(conversation_id)
     if conversation is None:
-        conversation = memory.create_conversation(conversation_id)
+        raise HTTPException(status_code=404, detail="Conversation not found")
     return conversation
+
+
+@memory_router.post(
+    "/conversations/{conversation_id}", response_model=Conversation, status_code=201
+)
+async def create_conversation_endpoint(
+    conversation_id: str, memory: LocalMemory = Depends(get_memory)
+) -> Conversation:
+    conversation = memory.get_conversation(conversation_id)
+    if conversation is not None:
+        raise HTTPException(status_code=400, detail="Conversation already exists")
+    conversation = memory.create_conversation(conversation_id)
+    return conversation
+
+
+@memory_router.delete("/conversations/{conversation_id}")
+async def delete_conversation_endpoint(
+    conversation_id: str, memory: LocalMemory = Depends(get_memory)
+) -> JSONResponse:
+    success = memory.delete_conversation(conversation_id)
+    if success:
+        return JSONResponse(status_code=200, content={"status": "conversation deleted"})
+    else:
+        raise HTTPException(status_code=404, detail="Conversation not found")
 
 
 @memory_router.get(
@@ -46,11 +67,12 @@ async def chat_history_endpoint(
     return conversation.messages
 
 
-@memory_router.post("/add_user_message", response_model=StatusResponse)
+@memory_router.post("/conversations/{conversation_id}/messages", status_code=201)
 async def add_user_message_endpoint(
-    request: AddUserMessageRequest, memory: LocalMemory = Depends(get_memory)
-) -> StatusResponse:
-    memory.add_message(
-        request.conversation_id, {"role": "user", "content": request.message}
-    )
-    return StatusResponse(status="message added")
+    conversation_id: str, message: str, memory: LocalMemory = Depends(get_memory)
+) -> JSONResponse:
+    try:
+        memory.add_message(conversation_id, {"role": "user", "content": message})
+    except ConversationNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    return JSONResponse(status_code=201, content={"status": "message added"})

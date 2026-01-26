@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from app.api.dependencies.dependencies import get_assistant, get_memory
 from app.core.agents.agent_runner import ResumateAgentRunner
 from typing import Optional
-from app.core.memory import LocalMemory
+from app.core.memory.base import BaseMemory
 
 chat_router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -19,7 +19,7 @@ class ChatRequest(BaseModel):
 async def chat_endpoint(
     chat_request: ChatRequest,
     assistant: ResumateAgentRunner = Depends(get_assistant),
-    memory: LocalMemory = Depends(get_memory),
+    memory: BaseMemory = Depends(get_memory),
 ):
     conversation = memory.get_conversation(chat_request.conversation_id)
     message_history = conversation.messages if conversation else []

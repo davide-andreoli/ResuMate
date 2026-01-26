@@ -13,7 +13,7 @@ pages = {
         st.Page("resume/templates.py", title="Templates"),
     ],
     "Chat": [
-        st.Page("chat/chat.py", title="Chat"),
+        # st.Page("chat/chat.py", title="Chat"),
         st.Page("chat/conversations.py", title="Conversations"),
     ],
 }

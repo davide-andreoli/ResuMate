@@ -2,7 +2,6 @@ from typing import Dict, List
 from pydantic_ai import ModelMessage, ModelMessagesTypeAdapter
 import streamlit as st
 import requests
-import uuid
 
 
 def from_pydantic_to_openai(messages: List[ModelMessage]) -> List[Dict[str, str]]:
@@ -44,7 +43,8 @@ if "selected_resume" not in st.session_state:
 if st.query_params.get("conversation_id"):
     conversation_id = st.query_params["conversation_id"]
 else:
-    conversation_id = f"{uuid.uuid4()}"
+    # Should not happen as we redirect from conversations page
+    raise ValueError("No conversation_id provided in query parameters")
 
 if "messages" not in st.session_state:
     messages = requests.get(
