@@ -1,4 +1,5 @@
 from app.models.resume import Resume
+from typing import List
 import os
 
 
@@ -14,10 +15,16 @@ class LocalDocumentStorage:
         os.makedirs(self.resume_folder, exist_ok=True)
         os.makedirs(self.template_folder, exist_ok=True)
 
-    def list_resumes(self):
-        return os.listdir(self.resume_folder)
+    def list_resumes(self) -> List[Resume]:
+        resumes: List[Resume] = []
+        for filename in os.listdir(self.resume_folder):
+            if filename.endswith(".yaml") or filename.endswith(".yml"):
+                with open(os.path.join(self.resume_folder, filename), "r") as f:
+                    resume = Resume.load_from_yaml_string(f.read())
+                    resumes.append(resume)
+        return resumes
 
-    def list_templates(self):
+    def list_templates(self) -> List[str]:
         return os.listdir(self.template_folder)
 
     def save_resume(self, resume_content: str, resume_name: str):
@@ -25,7 +32,7 @@ class LocalDocumentStorage:
         with open(resume_path, "w") as f:
             f.write(resume_content)
 
-    def get_resume(self, resume_name: str) -> Resume:
-        resume_path = os.path.join(self.resume_folder, resume_name)
+    def get_resume(self, resume_id: str) -> Resume:
+        resume_path = os.path.join(self.resume_folder, resume_id + ".yaml")
         with open(resume_path, "r") as f:
             return Resume.load_from_yaml_string(f.read())

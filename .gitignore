@@ -1,5 +1,6 @@
+memory/*
 documents/resumes/*
-!documents/resumes/Jane Doe.yaml
+!documents/resumes/res_ndzi76id.yaml
 credentials.json
 
 # Byte-compiled / optimized / DLL files

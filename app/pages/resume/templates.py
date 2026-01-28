@@ -62,7 +62,7 @@ def create_input_widget(key: str, definition: TemplateVariable):
 st.title("Templates & Export")
 
 st.subheader("Provide Resume YAML")
-resume_options = requests.get("http://127.0.0.1:8000/resume/list").json()
+resume_options = requests.get("http://127.0.0.1:8000/list").json()
 selected_resume = st.selectbox("Choose from your resumes", options=resume_options)
 
 st.subheader("Select Template")

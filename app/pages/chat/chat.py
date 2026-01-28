@@ -31,7 +31,7 @@ def change_resume(options: List[str]):
 
 st.title("Chat")
 
-resume_list = requests.get("http://127.0.0.1:8000/resume/list").json()
+resume_list = requests.get("http://127.0.0.1:8000/resumes").json()
 
 if not resume_list:
     st.info("No resumes found. Please create a resume first in the Resume section.")
@@ -48,7 +48,7 @@ else:
 
 if "messages" not in st.session_state:
     messages = requests.get(
-        f"http://127.0.0.1:8000/memory/conversations/{conversation_id}/messages"
+        f"http://127.0.0.1:8000/conversations/{conversation_id}/messages"
     ).json()
     pydantic_messages = ModelMessagesTypeAdapter.validate_python(messages)
     openai_messages = from_pydantic_to_openai(pydantic_messages)
@@ -67,7 +67,12 @@ with context_container:
     # TODO: Add a tooltip with last working agent ?
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.markdown(f"**Selected Resume:** {st.session_state.selected_resume}")
+        if st.session_state.selected_resume:
+            st.markdown(
+                f"**Selected Resume:** {st.session_state.selected_resume['display_name']}"
+            )
+        else:
+            st.markdown("**No resume selected**")
     with col2:
         if st.button("Change Resume"):
             # TODO: The change resume button should open a modal with resume cards to select from

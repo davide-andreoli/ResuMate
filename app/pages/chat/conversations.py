@@ -8,9 +8,7 @@ st.title("Conversations")
 
 def create_new_conversation():
     conversation_id = str(uuid.uuid4())
-    status = requests.post(
-        f"http://127.0.0.1:8000/memory/conversations/{conversation_id}"
-    )
+    status = requests.post(f"http://127.0.0.1:8000/conversations/{conversation_id}")
     if status.status_code == 201:
         st.switch_page(
             "chat/chat.py", query_params={"conversation_id": conversation_id}
@@ -22,7 +20,7 @@ if st.button("New Conversation", use_container_width=True):
 
 st.divider()
 
-conversations = requests.get("http://127.0.0.1:8000/memory/conversations").json()
+conversations = requests.get("http://127.0.0.1:8000/conversations").json()
 
 for conversation in conversations:
     with st.container(border=True):
@@ -54,7 +52,7 @@ for conversation in conversations:
                 use_container_width=True,
             ):
                 requests.delete(
-                    f"http://127.0.0.1:8000/memory/conversations/{conversation['conversation_id']}"
+                    f"http://127.0.0.1:8000/conversations/{conversation['conversation_id']}"
                 )
                 st.rerun()
         if st.button(

@@ -50,7 +50,7 @@ class ResumateAgentRunner:
         message_history: List[ModelMessage],
         memory: BaseMemory,
         conversation_id: str,
-        resume_name: Optional[str] = None,
+        resume_id: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         message_history_adapter = ModelMessagesTypeAdapter.validate_python(
             message_history
@@ -59,7 +59,7 @@ class ResumateAgentRunner:
             user_prompt=user_prompt,
             message_history=message_history_adapter,
             deps=SupervisorRuntimeContext(
-                document_storage=self.document_storage, resume_name=resume_name
+                document_storage=self.document_storage, resume_id=resume_id
             ),
         ) as response:
             async for text in response.stream_output():
@@ -131,7 +131,7 @@ class ResumateAgentRunner:
         message_history: List[ModelMessage],
         memory: BaseMemory,
         conversation_id: str,
-        resume_name: Optional[str] = None,
+        resume_id: Optional[str] = None,
         max_handoffs: int = 5,
     ) -> AsyncGenerator[str, None]:
         handoff_count = 0
@@ -142,7 +142,7 @@ class ResumateAgentRunner:
                 message_history=message_history,
                 memory=memory,
                 conversation_id=conversation_id,
-                resume_name=resume_name,
+                resume_id=resume_id,
             ):
                 yield chunk
 

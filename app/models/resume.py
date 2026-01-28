@@ -18,9 +18,17 @@ ResumeElement: TypeAlias = Union[
 ]
 
 
+class ResumeDetails(BaseModel):
+    name: str
+    id: str
+    updated_at: date
+    display_name: str
+
+
 class Resume(BaseModel):
     id: str = Field(default_factory=lambda: short_id("res_"))
     name: str
+    display_name: str
     date_of_birth: date
     title: Optional[str] = None
     email: Optional[EmailStr] = "mail@example.com"
@@ -37,6 +45,14 @@ class Resume(BaseModel):
     projects: List[Project] = Field(default_factory=list[Project])
     languages: List[Language] = Field(default_factory=list[Language])
     schema_version: int = 1
+
+    def get_details(self) -> ResumeDetails:
+        return ResumeDetails(
+            name=self.name,
+            id=self.id,
+            display_name=self.display_name,
+            updated_at=self.updated_at,
+        )
 
     def visible_only(self) -> "Resume":
         """
