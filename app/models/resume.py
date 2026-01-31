@@ -24,6 +24,9 @@ class ResumeDetails(BaseModel):
     updated_at: date
     display_name: str
 
+    def __str__(self) -> str:
+        return f"{self.display_name} (ID: {self.id}, Last Updated: {self.updated_at})"
+
 
 class Resume(BaseModel):
     id: str = Field(default_factory=lambda: short_id("res_"))

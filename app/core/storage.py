@@ -27,8 +27,8 @@ class LocalDocumentStorage:
     def list_templates(self) -> List[str]:
         return os.listdir(self.template_folder)
 
-    def save_resume(self, resume_content: str, resume_name: str):
-        resume_path = os.path.join(self.resume_folder, resume_name)
+    def save_resume(self, resume_content: str, resume_id: str):
+        resume_path = os.path.join(self.resume_folder, resume_id + ".yaml")
         with open(resume_path, "w") as f:
             f.write(resume_content)
 

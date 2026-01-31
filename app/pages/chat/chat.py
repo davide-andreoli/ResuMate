@@ -94,7 +94,9 @@ if prompt:
         json={
             "request": prompt,
             "conversation_id": conversation_id,
-            "resume_name": st.session_state.selected_resume,
+            "resume_id": st.session_state.selected_resume["id"]
+            if st.session_state.selected_resume
+            else None,
         },
         stream=True,
     )

@@ -25,9 +25,9 @@ def read_resume_content(context: RunContext[SupervisorRuntimeContext]) -> str:
     Returns:
         str: The content of the specified resume.
     """
-    if not context.deps.resume_name:
+    if not context.deps.resume_id:
         return "No resume selected."
-    resume = context.deps.document_storage.get_resume(context.deps.resume_name)
+    resume = context.deps.document_storage.get_resume(context.deps.resume_id)
     return resume.model_dump_json(indent=2)
 
 
@@ -46,9 +46,9 @@ def edit_resume_content(
     Returns:
         str: A message indicating whether the resume content was updated successfully or if the update failed.
     """
-    if not context.deps.resume_name:
+    if not context.deps.resume_id:
         return "No resume selected."
-    resume = context.deps.document_storage.get_resume(context.deps.resume_name)
+    resume = context.deps.document_storage.get_resume(context.deps.resume_id)
     if resume.update_element_by_id(element_id, new_content):
         return "Resume content updated successfully."
     return "Failed to update resume content."
