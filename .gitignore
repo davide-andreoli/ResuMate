@@ -1,5 +1,6 @@
 memory/*
 documents/resumes/*
+documents/renders/*
 !documents/resumes/res_ndzi76id.yaml
 credentials.json
 

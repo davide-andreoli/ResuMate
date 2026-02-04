@@ -10,6 +10,7 @@ home_page = st.Page("home/home.py", title="Home")
 resumes_page = st.Page("resume/resumes.py", title="Resumes")
 edit_resume_page = st.Page("resume/edit.py", title="Edit Resume")
 templates_page = st.Page("resume/templates.py", title="Templates")
+template_page = st.Page("resume/template.py", title="Template Preview")
 chat_page = st.Page("chat/chat.py", title="Chat")
 conversations_page = st.Page("chat/conversations.py", title="Conversations")
 
@@ -20,6 +21,7 @@ pages = {
         resumes_page,
         edit_resume_page,
         templates_page,
+        template_page,
     ],
     "Chat": [
         chat_page,

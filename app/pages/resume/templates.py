@@ -1,118 +1,43 @@
 import streamlit as st
-import asyncio
-import sys
-import io
-from typing import Dict, Optional, Any, List, Literal
-from pydantic import BaseModel
 import requests
 
+st.markdown("# Manage Templates")
 
-if sys.platform.startswith("win"):
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+options = requests.get("http://127.0.0.1:8000/templates/").json()
 
-
-class TemplateVariable(BaseModel):
-    type: Literal[
-        "text",
-        "select",
-        "multiselect",
-        "checkbox",
-        "bool",
-        "number",
-        "textarea",
-        "color",
-    ] = "text"
-    default: Optional[Any] = None
-    options: Optional[List[Any]] = None
-    label: Optional[str] = None
-    description: Optional[str] = None
-
-
-def create_input_widget(key: str, definition: TemplateVariable):
-    """
-    Accept a VariableDefinition and render the appropriate Streamlit widget.
-    Returns the actual value chosen by the user.
-    """
-    label = definition.label or key
-    vtype = definition.type
-    default = definition.default
-    options = definition.options or []
-
-    if vtype == "multiselect":
-        return st.multiselect(label, options, default=default or [])
-    if vtype == "select":
-        default_index = options.index(default) if (default in options) else 0
-        return st.selectbox(label, options, index=default_index)
-    if vtype in ("checkbox", "bool"):
-        return st.checkbox(label, value=bool(default))
-    if vtype == "number":
-        if isinstance(default, int):
-            return st.number_input(label, value=default, step=1)
-        if isinstance(default, float):
-            return st.number_input(label, value=default, format="%.2f")
-        return st.number_input(label, value=0)
-    if vtype == "textarea":
-        return st.text_area(label, value=str(default or ""))
-    if vtype == "color":
-        return st.color_picker(label, value=str(default or "#000000"))
-    # fallback to text input
-    return st.text_input(label, value=str(default or ""))
-
-
-st.title("Templates & Export")
-
-st.subheader("Provide Resume YAML")
-resume_options = requests.get("http://127.0.0.1:8000/list").json()
-selected_resume = st.selectbox("Choose from your resumes", options=resume_options)
-
-st.subheader("Select Template")
-template_options = requests.get("http://127.0.0.1:8000/template/list").json()
-selected_template = st.selectbox("Choose from your templates", options=template_options)
-
-template_variable_definitions = requests.get(
-    f"http://127.0.0.1:8000/template/{selected_template}/variables"
-).json()
-template_variable_definitions = {
-    key: TemplateVariable.model_validate(value)
-    for key, value in template_variable_definitions.items()
-    if isinstance(value, dict)
-}
-template_variable_values: Dict[str, Any] = {}
-if template_variable_definitions:
-    st.subheader("Template Options")
-    for variable_key, variable_definition in template_variable_definitions.items():
-        template_variable_values[variable_key] = create_input_widget(
-            variable_key, variable_definition
-        )
-
-st.subheader("Preview")
-
-if st.button("Render Preview"):
-    with st.spinner("Rendering template and generating PDF..."):
-        html = requests.post(
-            f"http://127.0.0.1:8000/template/{selected_template}/render/{selected_resume}",
-            json={"template_variables": template_variable_values},
-        ).json()["html"]
-
-        pdf_bytes = requests.post(
-            f"http://127.0.0.1:8000/template/{selected_template}/render/{selected_resume}/pdf",
-            json={"template_variables": template_variable_values},
-        ).content
-
-        st.pdf(io.BytesIO(pdf_bytes))
-        st.download_button(
-            "Download PDF",
-            data=io.BytesIO(pdf_bytes),
-            file_name=selected_resume + ".pdf",
-            mime="application/pdf",
-        )
-        st.download_button(
-            "Download HTML",
-            data=html,
-            file_name=selected_resume + ".html",
-            mime="text/html",
-        )
-else:
-    st.info(
-        "Click 'Render Preview' to generate HTML/PDF. This avoids blocking the UI during initial page build."
-    )
+for template_info in options:
+    with st.container(border=True):
+        # TODO: add template preview thumbnail if available
+        col1, col2 = st.columns([4, 2])
+        with col1:
+            title = (
+                template_info["name"]
+                if template_info.get("name")
+                else "Unnamed template"
+            )
+            st.subheader(title)
+            description = (
+                template_info["description"]
+                if template_info.get("description")
+                else "No description available."
+            )
+            st.caption(description)
+            author = (
+                template_info["author"]
+                if template_info.get("author")
+                else "No author available."
+            )
+            st.caption(author)
+        with col2:
+            version = template_info.get("version", "")
+            st.caption(f"Version: {version}")
+        col3, col4 = st.columns([4, 2])
+        with col3:
+            st.caption(template_info.get("id", "No id available."))
+        with col4:
+            if st.button("Delete", key=f"delete_template_{template_info['id']}"):
+                st.info("Template deletion not yet implemented.")
+        if st.button("Preview", key=f"preview_template_{template_info['id']}"):
+            st.switch_page(
+                "resume/template.py", query_params={"template_id": template_info["id"]}
+            )
