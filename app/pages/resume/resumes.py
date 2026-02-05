@@ -18,6 +18,7 @@ st.markdown("# Manage Resumes")
 col1, col2 = st.columns([1, 1])
 with col1:
     if st.button("➕ Create New Resume", key="new_resume_button"):
+        # TODO: this should probably be done in the resume edit page, which should create a default resume if no id is provided
         new_resume = load_default_resume()
         response = requests.post(
             "http://127.0.0.1:8000/resumes/",

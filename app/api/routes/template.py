@@ -35,6 +35,51 @@ async def list_templates(
     return template_details
 
 
+@template_router.post("/", status_code=201)
+async def create_template(
+    request: Request, storage: LocalDocumentStorage = Depends(get_storage)
+):
+    content_type = request.headers.get("content-type", "")
+    if content_type.startswith("application/json"):
+        template_data = await request.json()
+        template = Template(**template_data)
+    elif content_type.startswith(("application/html", "text/html", "text/plain")):
+        content = await request.body()
+        template_data = content.decode("utf-8")
+        template = Template.load_from_file_content(template_data)
+    else:
+        raise HTTPException(status_code=415, detail="Unsupported content type")
+    storage.save_template(template)
+    return {"id": template.id}
+
+
+@template_router.put("/{template_id}", status_code=204)
+async def update_template(
+    template_id: str,
+    request: Request,
+    storage: LocalDocumentStorage = Depends(get_storage),
+):
+    content_type = request.headers.get("content-type", "")
+    if content_type.startswith("application/json"):
+        template_data = await request.json()
+        template = Template(**template_data)
+    elif content_type.startswith(("application/html", "text/html", "text/plain")):
+        content = await request.body()
+        content = content.decode("utf-8")
+        template = Template.load_from_file_content(content)
+    else:
+        raise HTTPException(status_code=415, detail="Unsupported content type")
+    storage.save_template(template)
+
+
+@template_router.delete("/{template_id}", status_code=204)
+async def delete_template(
+    template_id: str, storage: LocalDocumentStorage = Depends(get_storage)
+):
+    # TODO: Implement delete functionality
+    pass
+
+
 @template_router.get("/{template_id}", response_model=Template)
 async def get_template(
     template_id: str, storage: LocalDocumentStorage = Depends(get_storage)

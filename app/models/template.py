@@ -114,3 +114,19 @@ class Template(BaseModel):
                 display_name="Unnamed Template",
                 html_content=file_content,
             )
+
+    def to_file_content(self):
+        front_matter: Dict[str, Any] = {
+            "details": {
+                "id": self.id,
+                "name": self.name,
+                "display_name": self.display_name,
+                "description": self.description,
+            },
+            "variables": {
+                name: variable.model_dump(mode="json")
+                for name, variable in self.variables.items()
+            },
+        }
+        front_matter_yaml = yaml.safe_dump(front_matter, sort_keys=False)
+        return f"---\n{front_matter_yaml}---\n{self.html_content}"

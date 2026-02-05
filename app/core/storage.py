@@ -46,6 +46,11 @@ class LocalDocumentStorage:
         with open(template_path, "r") as f:
             return Template.load_from_file_content(f.read())
 
+    def save_template(self, template: Template):
+        template_path = os.path.join(self.template_folder, template.id + ".html.j2")
+        with open(template_path, "w") as f:
+            f.write(template.to_file_content())
+
     def save_resume(self, resume_content: str, resume_id: str):
         resume_path = os.path.join(self.resume_folder, resume_id + ".yaml")
         with open(resume_path, "w") as f:
