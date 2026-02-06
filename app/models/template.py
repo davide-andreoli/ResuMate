@@ -14,6 +14,7 @@ if sys.platform.startswith("win"):
 
 
 class TemplateVariable(BaseModel):
+    name: str = "variable_name"
     type: Literal[
         "text",
         "select",
@@ -25,7 +26,7 @@ class TemplateVariable(BaseModel):
         "color",
     ] = "text"
     default: Optional[Any] = None
-    options: Optional[List[Any]] = None
+    options: Optional[List[str]] = None
     label: Optional[str] = None
     description: Optional[str] = None
 
@@ -46,7 +47,7 @@ class Template(BaseModel):
     description: Optional[str] = None
     author: Optional[str] = None
     version: int = 1
-    variables: Dict[str, TemplateVariable] = Field(default_factory=dict)
+    variables: List[TemplateVariable] = []
     html_content: str
 
     def get_details(self) -> TemplateDetails:
@@ -80,7 +81,7 @@ class Template(BaseModel):
                 html_content=file_content,
             )
         if front_matter:
-            front_matter_vars: dict[str, Any] = front_matter.get("variables", {})
+            front_matter_vars: list[dict[str, Any]] = front_matter.get("variables", [])
             front_matter_details: dict[str, Any] = front_matter.get("details", {})
 
             template_name = front_matter_details.get("name", "Unnamed")
@@ -88,13 +89,11 @@ class Template(BaseModel):
             id = front_matter_details.get("id", short_id("tmp_"))
             description = front_matter_details.get("description", None)
 
-            variables: Dict[str, TemplateVariable] = {}
+            variables: List[TemplateVariable] = []
 
-            for name, definition in front_matter_vars.items():
-                if not isinstance(definition, dict):
-                    continue
+            for definition in front_matter_vars:
                 try:
-                    variables[name] = TemplateVariable.model_validate(definition)
+                    variables.append(TemplateVariable.model_validate(definition))
                 except ValidationError:
                     continue
 
@@ -123,10 +122,9 @@ class Template(BaseModel):
                 "display_name": self.display_name,
                 "description": self.description,
             },
-            "variables": {
-                name: variable.model_dump(mode="json")
-                for name, variable in self.variables.items()
-            },
+            "variables": [
+                variable.model_dump(mode="json") for variable in self.variables
+            ],
         }
         front_matter_yaml = yaml.safe_dump(front_matter, sort_keys=False)
         return f"---\n{front_matter_yaml}---\n{self.html_content}"

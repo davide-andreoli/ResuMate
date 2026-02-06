@@ -3,7 +3,7 @@ from app.models.resume import Resume
 from datetime import date, datetime
 import requests
 
-# TODO: delete a resume
+
 # TODO: rename a resume
 
 

@@ -1,5 +1,6 @@
 import streamlit as st
-from app.models.template import Template
+from app.models.template import Template, TemplateVariable
+from app.pages.ui_utils.section_renderer import render_pydantic_section
 import requests
 from typing import Dict, Any
 
@@ -16,7 +17,7 @@ else:
     template = Template(
         name="New Template",
         description="Describe your template here.",
-        variables={},
+        variables=[],
         display_name="Template Preview",
         author="Author Name",
         version=1,
@@ -42,8 +43,13 @@ st.text_area(
     "HTML Content", key="template_html_content", value=template.html_content, height=500
 )
 
-with st.expander("Variables"):
-    pass
+# TODO: Using render_pydantic_section is convenient but TemplateVariable might need a bit more customization like the ability of displaying some fields only when necessary e.g. the options field should be visible only when multiselect is chosen
+render_pydantic_section(
+    "Template Variables",
+    TemplateVariable,
+    template,
+    section_key="variables",
+)
 
 
 if st.button("Save Template"):

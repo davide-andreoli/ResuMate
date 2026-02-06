@@ -69,9 +69,9 @@ template_variable_definitions = selected_template.variables
 template_variable_values: Dict[str, Any] = {}
 if template_variable_definitions:
     st.subheader("Template Options")
-    for variable_key, variable_definition in template_variable_definitions.items():
-        template_variable_values[variable_key] = create_input_widget(
-            variable_key, variable_definition
+    for variable_definition in template_variable_definitions:
+        template_variable_values[variable_definition.name] = create_input_widget(
+            variable_definition.name, variable_definition
         )
 
 st.subheader("Preview")

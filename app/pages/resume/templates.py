@@ -12,7 +12,7 @@ with col1:
         new_template = Template(
             name="New Template",
             description="Describe your template here.",
-            variables={},
+            variables=[],
             display_name="Template Preview",
             author="Author Name",
             version=1,
