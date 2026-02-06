@@ -76,8 +76,7 @@ async def update_template(
 async def delete_template(
     template_id: str, storage: LocalDocumentStorage = Depends(get_storage)
 ):
-    # TODO: Implement delete functionality
-    pass
+    storage.delete_template(template_id=template_id)
 
 
 @template_router.get("/{template_id}", response_model=Template)

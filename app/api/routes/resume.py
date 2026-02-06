@@ -49,8 +49,7 @@ async def create_resume(
 async def delete_resume(
     resume_id: str, storage: LocalDocumentStorage = Depends(get_storage)
 ):
-    # TODO: Implement delete functionality
-    pass
+    storage.delete_resume(resume_id=resume_id)
 
 
 @resume_router.put("/{resume_id}", status_code=204)

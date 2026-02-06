@@ -51,6 +51,10 @@ class LocalDocumentStorage:
         with open(template_path, "w") as f:
             f.write(template.to_file_content())
 
+    def delete_template(self, template_id: str):
+        template_path = os.path.join(self.template_folder, template_id + ".html.j2")
+        os.remove(template_path)
+
     def save_resume(self, resume_content: str, resume_id: str):
         resume_path = os.path.join(self.resume_folder, resume_id + ".yaml")
         with open(resume_path, "w") as f:
@@ -60,6 +64,10 @@ class LocalDocumentStorage:
         resume_path = os.path.join(self.resume_folder, resume_id + ".yaml")
         with open(resume_path, "r") as f:
             return Resume.load_from_yaml_string(f.read())
+
+    def delete_resume(self, resume_id: str):
+        resume_path = os.path.join(self.resume_folder, resume_id + ".yaml")
+        os.remove(resume_path)
 
     def save_rendered_html(self, html_content: str, render_id: str):
         html_path = os.path.join(self.html_folder, render_id + ".html")
