@@ -12,7 +12,7 @@ chat_router = APIRouter(prefix="/chat", tags=["chat"])
 class ChatRequest(BaseModel):
     request: str
     conversation_id: str
-    resume_name: Optional[str] = None
+    resume_id: Optional[str] = None
 
 
 @chat_router.post("/", response_class=StreamingResponse)
@@ -30,6 +30,6 @@ async def chat_endpoint(
             message_history=message_history,
             memory=memory,
             conversation_id=chat_request.conversation_id,
-            resume_name=chat_request.resume_name,
+            resume_id=chat_request.resume_id,
         )
     )

@@ -19,10 +19,6 @@ class BaseMemory(ABC):
         pass
 
     @abstractmethod
-    def list_conversations(self) -> List[Conversation]:
-        pass
-
-    @abstractmethod
     def add_message(self, conversation_id: str, message: ModelMessage):
         pass
 

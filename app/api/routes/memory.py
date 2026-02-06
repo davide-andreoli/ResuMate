@@ -5,10 +5,10 @@ from typing import List
 from pydantic_ai import ModelMessage
 from fastapi.responses import JSONResponse
 
-memory_router = APIRouter(prefix="/memory", tags=["memory"])
+memory_router = APIRouter(prefix="/conversations", tags=["memory"])
 
 
-@memory_router.get("/conversations", response_model=List[Conversation])
+@memory_router.get("/", response_model=List[Conversation])
 async def get_conversations_endpoint(
     memory: LocalMemory = Depends(get_memory),
 ) -> List[Conversation]:
@@ -21,7 +21,7 @@ async def get_conversations_endpoint(
     return sorted_conversations
 
 
-@memory_router.get("/conversations/{conversation_id}", response_model=Conversation)
+@memory_router.get("/{conversation_id}", response_model=Conversation)
 async def get_conversation_endpoint(
     conversation_id: str, memory: LocalMemory = Depends(get_memory)
 ) -> Conversation:
@@ -31,9 +31,7 @@ async def get_conversation_endpoint(
     return conversation
 
 
-@memory_router.post(
-    "/conversations/{conversation_id}", response_model=Conversation, status_code=201
-)
+@memory_router.post("/{conversation_id}", response_model=Conversation, status_code=201)
 async def create_conversation_endpoint(
     conversation_id: str, memory: LocalMemory = Depends(get_memory)
 ) -> Conversation:
@@ -44,7 +42,7 @@ async def create_conversation_endpoint(
     return conversation
 
 
-@memory_router.delete("/conversations/{conversation_id}")
+@memory_router.delete("/{conversation_id}")
 async def delete_conversation_endpoint(
     conversation_id: str, memory: LocalMemory = Depends(get_memory)
 ) -> JSONResponse:
@@ -55,9 +53,7 @@ async def delete_conversation_endpoint(
         raise HTTPException(status_code=404, detail="Conversation not found")
 
 
-@memory_router.get(
-    "/conversations/{conversation_id}/messages", response_model=List[ModelMessage]
-)
+@memory_router.get("/{conversation_id}/messages", response_model=List[ModelMessage])
 async def chat_history_endpoint(
     conversation_id: str, memory: LocalMemory = Depends(get_memory)
 ) -> List[ModelMessage]:
@@ -67,7 +63,7 @@ async def chat_history_endpoint(
     return conversation.messages
 
 
-@memory_router.post("/conversations/{conversation_id}/messages", status_code=201)
+@memory_router.post("/{conversation_id}/messages", status_code=201)
 async def add_user_message_endpoint(
     conversation_id: str, message: str, memory: LocalMemory = Depends(get_memory)
 ) -> JSONResponse:

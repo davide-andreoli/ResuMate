@@ -23,7 +23,7 @@ def list_resumes_tool(context: RunContext[SupervisorRuntimeContext]) -> str:
         str: A formatted string listing all resumes.
     """
     resumes = context.deps.document_storage.list_resumes()
-    return "\n".join(resumes)
+    return "\n".join([str(resume.get_details()) for resume in resumes])
 
 
 class WelcomeAgentProvider(ResumateAgentProvider):
