@@ -10,7 +10,7 @@ from app.models.skill import Skill
 from app.models.certification import Certification
 from app.models.project import Project
 from app.models.langauge import Language
-from app.models.cv_item import short_id
+from app.models.utils import short_id
 from typing import TypeAlias, Union
 
 ResumeElement: TypeAlias = Union[

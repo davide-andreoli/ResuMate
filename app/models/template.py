@@ -6,7 +6,7 @@ import re
 
 import yaml
 
-from app.models.cv_item import short_id
+from app.models.utils import short_id
 
 
 if sys.platform.startswith("win"):
