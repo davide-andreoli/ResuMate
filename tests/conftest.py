@@ -54,3 +54,49 @@ def make_skill() -> Callable[..., Skill]:
 def test_resume_file() -> str:
     path = pathlib.Path(__file__).parent / "fixtures" / "test_resume_data.yaml"
     return path.read_text()
+
+
+@pytest.fixture
+def test_template_file() -> str:
+    path = pathlib.Path(__file__).parent / "fixtures" / "test_template_data.html.j2"
+    return path.read_text()
+
+
+@pytest.fixture
+def test_template_no_front_matter_file() -> str:
+    path = (
+        pathlib.Path(__file__).parent
+        / "fixtures"
+        / "test_template_no_frontmatter.html.j2"
+    )
+    return path.read_text()
+
+
+@pytest.fixture
+def test_template_invalid_front_matter_file() -> str:
+    path = (
+        pathlib.Path(__file__).parent
+        / "fixtures"
+        / "test_template_invalid_frontmatter.html.j2"
+    )
+    return path.read_text()
+
+
+@pytest.fixture
+def test_template_empty_front_matter_file() -> str:
+    path = (
+        pathlib.Path(__file__).parent
+        / "fixtures"
+        / "test_template_empty_frontmatter.html.j2"
+    )
+    return path.read_text()
+
+
+@pytest.fixture
+def test_template_invalid_variable_front_matter_file() -> str:
+    path = (
+        pathlib.Path(__file__).parent
+        / "fixtures"
+        / "test_template_invalid_variable_frontmatter.html.j2"
+    )
+    return path.read_text()

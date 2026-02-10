@@ -2,6 +2,8 @@ from datetime import date
 
 import yaml
 from app.models.resume import Resume, ResumeDetails
+from app.models.skill import Skill
+from typing import Callable, cast
 
 
 def test_load_resume_from_yaml(test_resume_file: str):
@@ -12,6 +14,7 @@ def test_load_resume_from_yaml(test_resume_file: str):
     assert resume.id == "res_ndzi76id"
     assert resume.date_of_birth == date(2000, 1, 1)
     assert resume.display_name == "Jane Doe Resume"
+    assert len(resume.links) == 3
 
 
 def test_resume_dumps_to_yaml(test_resume_file: str):
@@ -32,3 +35,43 @@ def test_resume_details(test_resume_file: str):
     assert (
         str(details) == "Jane Doe Resume (ID: res_ndzi76id, Last Updated: 2025-10-01)"
     )
+
+
+def test_resume_visible_only(test_resume_file: str):
+    resume = Resume.load_from_yaml_string(test_resume_file)
+    visible_resume = resume.visible_only()
+    assert isinstance(visible_resume, Resume)
+    assert len(visible_resume.links) == 0
+
+
+def test_get_element_by_id(test_resume_file: str):
+    resume = Resume.load_from_yaml_string(test_resume_file)
+    element: Skill = cast(Skill, resume.get_element_by_id("ski_pjfqsp7a"))
+    assert element is not None
+    assert element.id == "ski_pjfqsp7a"
+    assert element.name == "Python"
+    assert element.level == "Advanced"
+
+
+def test_get_element_by_id_not_found(test_resume_file: str):
+    resume = Resume.load_from_yaml_string(test_resume_file)
+    element = resume.get_element_by_id("non_existent_id")
+    assert element is None
+
+
+def test_update_element_by_id(test_resume_file: str, make_skill: Callable[..., Skill]):
+    resume = Resume.load_from_yaml_string(test_resume_file)
+    new_skill = make_skill(name="Python", level="Expert")
+    resume.update_element_by_id("ski_pjfqsp7a", new_skill)
+    updated_skill: Skill = cast(Skill, resume.get_element_by_id("ski_pjfqsp7a"))
+    assert updated_skill.name == "Python"
+    assert updated_skill.level == "Expert"
+
+
+def test_update_element_by_id_not_found(
+    test_resume_file: str, make_skill: Callable[..., Skill]
+):
+    resume = Resume.load_from_yaml_string(test_resume_file)
+    new_skill = make_skill(name="Python", level="Expert")
+    result = resume.update_element_by_id("non_existent_id", new_skill)
+    assert result is False

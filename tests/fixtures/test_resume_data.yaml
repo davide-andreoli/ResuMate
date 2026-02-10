@@ -9,19 +9,19 @@ created_at: '2025-10-01'
 updated_at: '2025-10-01'
 links:
 - id: lin_7q67kixk
-  visible: true
+  visible: false
   schema_version: 1
   label: Personal Website
   url: https://janedoe.dev/
   link_type: website
 - id: lin_h9sl6zem
-  visible: true
+  visible: false
   schema_version: 1
   label: LinkedIn
   url: https://linkedin.com/in/janedoe
   link_type: linkedin
 - id: lin_76tkrdav
-  visible: true
+  visible: false
   schema_version: 1
   label: GitHub
   url: https://github.com/janedoe
