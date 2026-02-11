@@ -8,28 +8,28 @@ from app.core.types import Conversation
 class BaseMemory(ABC):
     @abstractmethod
     def get_conversation(self, conversation_id: str) -> Optional[Conversation]:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def create_conversation(self, conversation_id: str) -> Conversation:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def delete_conversation(self, conversation_id: str) -> bool:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def add_message(self, conversation_id: str, message: ModelMessage):
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def add_messages(self, conversation_id: str, messages: List[ModelMessage]):
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def get_all_conversations(self) -> List[Conversation]:
-        pass
+        pass  # pragma: no cover
 
 
 class ConversationNotFoundError(Exception):
-    pass
+    pass  # pragma: no cover

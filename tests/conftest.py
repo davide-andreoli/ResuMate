@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, Optional
 from app.models.cv_item import CvItem
 from app.models.link import Link
 from app.models.skill import Skill
+from pydantic_ai import ModelRequest, ModelResponse, UserPromptPart, TextPart
 import pathlib
 
 
@@ -100,3 +101,33 @@ def test_template_invalid_variable_front_matter_file() -> str:
         / "test_template_invalid_variable_frontmatter.html.j2"
     )
     return path.read_text()
+
+
+@pytest.fixture
+def make_model_request() -> Callable[..., ModelRequest]:
+    def _make_model_request(
+        content: str = "Hello, how are you?", role: str = "user", **kwargs: Any
+    ) -> ModelRequest:
+        parts = [
+            UserPromptPart(
+                content=content,
+            )
+        ]
+        return ModelRequest(parts=parts)
+
+    return _make_model_request
+
+
+@pytest.fixture
+def make_model_response() -> Callable[..., ModelResponse]:
+    def _make_model_response(
+        content: str = "Hello, how are you?", role: str = "user", **kwargs: Any
+    ) -> ModelResponse:
+        parts = [
+            TextPart(
+                content=content,
+            )
+        ]
+        return ModelResponse(parts=parts)
+
+    return _make_model_response

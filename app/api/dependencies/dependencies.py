@@ -1,7 +1,7 @@
 from functools import lru_cache
 from app.core.agents.agent_runner import ResumateAgentRunner
 from app.core.agents.builder import ModelConfig
-from app.core.memory.memory import LocalFileMemory
+from app.core.memory.local_file_memory import LocalFileMemory
 from app.core.storage import LocalDocumentStorage
 
 
