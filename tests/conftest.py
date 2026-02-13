@@ -1,10 +1,20 @@
 import pytest
 from typing import Any, Callable, Dict, Optional
+from app.core.agents.builder import ModelConfig, ProviderName
+from app.core.agents.common import SupervisorRuntimeContext
+from app.core.storage import LocalDocumentStorage
 from app.models.cv_item import CvItem
 from app.models.link import Link
 from app.models.skill import Skill
-from pydantic_ai import ModelRequest, ModelResponse, UserPromptPart, TextPart
+from pydantic_ai import (
+    ModelRequest,
+    ModelResponse,
+    UserPromptPart,
+    TextPart,
+    RunContext,
+)
 import pathlib
+from unittest.mock import MagicMock
 
 
 @pytest.fixture
@@ -131,3 +141,47 @@ def make_model_response() -> Callable[..., ModelResponse]:
         return ModelResponse(parts=parts)
 
     return _make_model_response
+
+
+@pytest.fixture
+def test_template_rendered_html() -> str:
+    path = (
+        pathlib.Path(__file__).parent / "fixtures" / "test_template_rendered_html.html"
+    )
+    return path.read_text()
+
+
+@pytest.fixture
+def test_template_rendered_pdf() -> bytes:
+    path = pathlib.Path(__file__).parent / "fixtures" / "test_template_rendered_pdf.pdf"
+    return path.read_bytes()
+
+
+@pytest.fixture
+def default_model_config() -> ModelConfig:
+    return ModelConfig(
+        provider=ProviderName.google_vertex,
+        credentials_file=pathlib.Path("test_credentials.json"),
+        project_id="test_project",
+        model_name="test-model",
+        model_location="test-location",
+    )
+
+
+@pytest.fixture
+def test_supervisor_runtime_context(
+    tmp_path: pathlib.Path,
+) -> Callable[..., RunContext[SupervisorRuntimeContext]]:
+    def _make_test_supervisor_runtime_context(
+        resume_id: Optional[str] = None,
+    ) -> RunContext[SupervisorRuntimeContext]:
+        document_storage = LocalDocumentStorage(str(tmp_path))
+        return RunContext(
+            deps=SupervisorRuntimeContext(
+                document_storage=document_storage, resume_id=resume_id
+            ),
+            model=MagicMock(),
+            usage=MagicMock(),
+        )
+
+    return _make_test_supervisor_runtime_context
