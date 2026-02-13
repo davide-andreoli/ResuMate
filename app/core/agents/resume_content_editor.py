@@ -50,6 +50,9 @@ def edit_resume_content(
         return "No resume selected."
     resume = context.deps.document_storage.get_resume(context.deps.resume_id)
     if resume.update_element_by_id(element_id, new_content):
+        context.deps.document_storage.save_resume(
+            resume.dump_to_yaml_string(), context.deps.resume_id
+        )
         return "Resume content updated successfully."
     return "Failed to update resume content."
 
