@@ -46,4 +46,4 @@ class ResumateAgentProvider(ABC):
     def build(
         self, config: ModelConfig, agents_list: str
     ) -> Agent[SupervisorRuntimeContext, str | ModelHandoff]:
-        pass
+        pass  # pragma: no cover # should be implemented by subclasses
