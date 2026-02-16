@@ -120,9 +120,7 @@ class ResumateAgentRunner:
 
         memory.add_messages(
             conversation_id=conversation_id,
-            messages=to_jsonable_python(
-                ModelMessagesTypeAdapter.validate_python([message])
-            ),
+            messages=[message],
         )
 
     async def run_conversation(
