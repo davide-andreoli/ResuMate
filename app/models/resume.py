@@ -10,7 +10,7 @@ from app.models.skill import Skill
 from app.models.certification import Certification
 from app.models.project import Project
 from app.models.langauge import Language
-from app.models.cv_item import short_id
+from app.models.utils import short_id
 from typing import TypeAlias, Union
 
 ResumeElement: TypeAlias = Union[
@@ -115,10 +115,33 @@ class Resume(BaseModel):
         for collection in collections:
             for idx, element in enumerate(collection):
                 if getattr(element, "id", None) == element_id:
+                    old_id = getattr(element, "id", None)
+                    new_element.id = old_id
                     collection[idx] = new_element
                     self.updated_at = date.today()
                     return True
         return False
+
+    def get_element_by_id(self, element_id: str) -> Optional[ResumeElement]:
+        """
+        Retrieve an element from the resume by its ID.
+        Returns the element if found, or None if not found.
+        """
+        collections = [
+            self.links,
+            self.skills,
+            self.experience,
+            self.education,
+            self.certifications,
+            self.projects,
+            self.languages,
+        ]
+
+        for collection in collections:
+            for element in collection:
+                if getattr(element, "id", None) == element_id:
+                    return element
+        return None
 
     def dump_to_yaml_string(self) -> str:
         data = self.model_dump(mode="json", exclude_none=True)

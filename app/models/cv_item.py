@@ -1,13 +1,6 @@
 from pydantic import BaseModel, Field, model_validator
-import secrets
-import string
-from typing import Any
-
-
-def short_id(prefix: str = "", length: int = 8) -> str:
-    """Generate a short random string ID with optional prefix."""
-    alphabet = string.ascii_lowercase + string.digits
-    return prefix + "".join(secrets.choice(alphabet) for _ in range(length))
+from typing import Any, Dict, cast
+from app.models.utils import short_id
 
 
 class CvItem(BaseModel):
@@ -16,12 +9,12 @@ class CvItem(BaseModel):
     schema_version: int = 1
 
     @model_validator(mode="before")
-    def ensure_id(cls, data: Any) -> Any:
+    def ensure_id(cls, data: Any) -> Any | Dict[str, Any]:
         """Ensure an id exists; compute prefix from the actual model class name."""
         if not isinstance(data, dict):
             return data
-        if data.get("id"):
-            return data
+        if "id" in data and data["id"]:
+            return cast(Dict[str, Any], data)
         prefix = cls.__name__.lower()[:3] + "_"
         data["id"] = short_id(prefix)
-        return data
+        return cast(Dict[str, Any], data)

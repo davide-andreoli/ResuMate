@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.api.dependencies.dependencies import get_memory
-from app.core.memory.memory import Conversation, ConversationNotFoundError, LocalMemory
+from app.core.memory.local_file_memory import (
+    Conversation,
+    ConversationNotFoundError,
+    LocalFileMemory,
+)
 from typing import List
 from pydantic_ai import ModelMessage
 from fastapi.responses import JSONResponse
@@ -10,7 +14,7 @@ memory_router = APIRouter(prefix="/conversations", tags=["memory"])
 
 @memory_router.get("/", response_model=List[Conversation])
 async def get_conversations_endpoint(
-    memory: LocalMemory = Depends(get_memory),
+    memory: LocalFileMemory = Depends(get_memory),
 ) -> List[Conversation]:
     conversations = memory.get_all_conversations()
     sorted_conversations = sorted(
@@ -23,7 +27,7 @@ async def get_conversations_endpoint(
 
 @memory_router.get("/{conversation_id}", response_model=Conversation)
 async def get_conversation_endpoint(
-    conversation_id: str, memory: LocalMemory = Depends(get_memory)
+    conversation_id: str, memory: LocalFileMemory = Depends(get_memory)
 ) -> Conversation:
     conversation = memory.get_conversation(conversation_id)
     if conversation is None:
@@ -33,7 +37,7 @@ async def get_conversation_endpoint(
 
 @memory_router.post("/{conversation_id}", response_model=Conversation, status_code=201)
 async def create_conversation_endpoint(
-    conversation_id: str, memory: LocalMemory = Depends(get_memory)
+    conversation_id: str, memory: LocalFileMemory = Depends(get_memory)
 ) -> Conversation:
     conversation = memory.get_conversation(conversation_id)
     if conversation is not None:
@@ -44,7 +48,7 @@ async def create_conversation_endpoint(
 
 @memory_router.delete("/{conversation_id}")
 async def delete_conversation_endpoint(
-    conversation_id: str, memory: LocalMemory = Depends(get_memory)
+    conversation_id: str, memory: LocalFileMemory = Depends(get_memory)
 ) -> JSONResponse:
     success = memory.delete_conversation(conversation_id)
     if success:
@@ -55,7 +59,7 @@ async def delete_conversation_endpoint(
 
 @memory_router.get("/{conversation_id}/messages", response_model=List[ModelMessage])
 async def chat_history_endpoint(
-    conversation_id: str, memory: LocalMemory = Depends(get_memory)
+    conversation_id: str, memory: LocalFileMemory = Depends(get_memory)
 ) -> List[ModelMessage]:
     conversation = memory.get_conversation(conversation_id)
     if conversation is None:
@@ -65,7 +69,7 @@ async def chat_history_endpoint(
 
 @memory_router.post("/{conversation_id}/messages", status_code=201)
 async def add_user_message_endpoint(
-    conversation_id: str, message: str, memory: LocalMemory = Depends(get_memory)
+    conversation_id: str, message: str, memory: LocalFileMemory = Depends(get_memory)
 ) -> JSONResponse:
     try:
         memory.add_message(conversation_id, {"role": "user", "content": message})
