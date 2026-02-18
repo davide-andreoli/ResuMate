@@ -1,6 +1,6 @@
 [project]
 name = "ResuMate"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 authors = [
     {name = "Davide Andreoli",email = "davide.andreoli@icloud.com"}
@@ -39,3 +39,6 @@ pytest = "^8.4.1"
 pyright = "^1.1.404"
 coverage = "^7.10.6"
 ruff = "^0.12.11"
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"

@@ -1,38 +1,20 @@
 import asyncio
-from fastapi.responses import JSONResponse
-from fastapi import APIRouter, Depends, Body, Response
+from fastapi import APIRouter, Depends, Body, HTTPException, Request, Response
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 from app.api.dependencies.dependencies import get_storage
 from app.core.storage import LocalDocumentStorage
-from typing import Dict, Literal, Optional, Any, List
+from app.models.template import Template, TemplateDetails
+from typing import Dict, Optional, Any, List
 import os
 import re
-import yaml
 import logging
 from playwright.async_api import async_playwright
 import sys
 
 logger = logging.getLogger(__name__)
 
-template_router = APIRouter(prefix="/template", tags=["template"])
-
-
-class TemplateVariable(BaseModel):
-    type: Literal[
-        "text",
-        "select",
-        "multiselect",
-        "checkbox",
-        "bool",
-        "number",
-        "textarea",
-        "color",
-    ] = "text"
-    default: Optional[Any] = None
-    options: Optional[List[Any]] = None
-    label: Optional[str] = None
-    description: Optional[str] = None
+template_router = APIRouter(prefix="/templates", tags=["template"])
 
 
 class ListTemplatesResponse(BaseModel):
@@ -40,131 +22,139 @@ class ListTemplatesResponse(BaseModel):
 
 
 class RenderRequest(BaseModel):
+    resume_id: str
     template_variables: Optional[Dict[str, Any]] = None
 
 
-@template_router.get("/list", response_model=List[str])
-async def list_templates(storage: LocalDocumentStorage = Depends(get_storage)):
+@template_router.get("/", response_model=List[TemplateDetails])
+async def list_templates(
+    storage: LocalDocumentStorage = Depends(get_storage),
+) -> List[TemplateDetails]:
     templates = storage.list_templates()
-    return templates
+    template_details = [template.get_details() for template in templates]
+    return template_details
 
 
-@template_router.get(
-    "/{template_name}/variables", response_model=Dict[str, TemplateVariable]
-)
-async def get_template_variables(
-    template_name: str, storage: LocalDocumentStorage = Depends(get_storage)
+@template_router.post("/", status_code=201)
+async def create_template(
+    request: Request, storage: LocalDocumentStorage = Depends(get_storage)
 ):
-    path = os.path.join(storage.template_folder, template_name)
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            text = f.read()
-    except FileNotFoundError:
-        return dict[str, TemplateVariable]()
-
-    front_matter_match = re.match(r"\s*---\s*\n(.*?)\n---\s*\n", text, re.S)
-    if not front_matter_match:
-        return dict[str, TemplateVariable]()
-    try:
-        front_matter: dict[str, Any] = yaml.safe_load(front_matter_match.group(1)) or {}
-        raw_vars: dict[str, Any] = front_matter.get("variables", {})
-
-        normalized: dict[str, TemplateVariable] = {}
-        for name, definition in raw_vars.items():
-            if not isinstance(definition, dict):
-                continue
-            try:
-                normalized[name] = TemplateVariable.model_validate(definition)
-            except ValidationError:
-                continue
-
-        return normalized
-    except Exception:
-        return dict[str, TemplateVariable]()
+    content_type = request.headers.get("content-type", "")
+    if content_type.startswith("application/json"):
+        template_data = await request.json()
+        template = Template(**template_data)
+    elif content_type.startswith(("application/html", "text/html", "text/plain")):
+        content = await request.body()
+        template_data = content.decode("utf-8")
+        template = Template.load_from_file_content(template_data)
+    else:
+        raise HTTPException(status_code=415, detail="Unsupported content type")
+    storage.save_template(template)
+    return {"id": template.id}
 
 
-def _render_template_to_html(
-    template_name: str,
-    resume_name: str,
-    template_variables: Optional[Dict[str, Any]],
-    storage: LocalDocumentStorage,
-) -> str:
-    resume = storage.get_resume(resume_name=resume_name)
+@template_router.put("/{template_id}", status_code=204)
+async def update_template(
+    template_id: str,
+    request: Request,
+    storage: LocalDocumentStorage = Depends(get_storage),
+):
+    content_type = request.headers.get("content-type", "")
+    if content_type.startswith("application/json"):
+        template_data = await request.json()
+        template = Template(**template_data)
+    elif content_type.startswith(("application/html", "text/html", "text/plain")):
+        content = await request.body()
+        content = content.decode("utf-8")
+        template = Template.load_from_file_content(content)
+    else:
+        raise HTTPException(status_code=415, detail="Unsupported content type")
+    storage.save_template(template)
+
+
+@template_router.delete("/{template_id}", status_code=204)
+async def delete_template(
+    template_id: str, storage: LocalDocumentStorage = Depends(get_storage)
+):
+    storage.delete_template(template_id=template_id)
+
+
+@template_router.get("/{template_id}", response_model=Template)
+async def get_template(
+    template_id: str, storage: LocalDocumentStorage = Depends(get_storage)
+) -> Template:
+    template = storage.get_template(template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return template
+
+
+@template_router.post("/{template_id}/renders", status_code=201)
+async def render_template_endpoint(
+    template_id: str,
+    request: Request,
+    payload: RenderRequest = Body(default=None),
+    storage: LocalDocumentStorage = Depends(get_storage),
+):
+    accept_header = request.headers.get("accept", "")
+    if sys.platform.startswith("win"):
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
+    resume = storage.get_resume(resume_id=payload.resume_id)
     if not resume:
-        return ""
+        raise HTTPException(status_code=404, detail="Resume not found")
 
     env = Environment(
         loader=FileSystemLoader(storage.template_folder),
         autoescape=select_autoescape(["html", "xml"]),
     )
 
-    path = os.path.join(storage.template_folder, template_name)
+    path = os.path.join(storage.template_folder, template_id + ".html.j2")
     try:
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
     except FileNotFoundError:
-        return ""
+        raise HTTPException(status_code=404, detail="Template not found")
     # remove leading YAML front-matter block between the first two --- lines
     template_source = re.sub(r"^\s*---\s*\n(.*?)\n---\s*\n", "", text, flags=re.S)
 
     if not template_source:
-        template = env.get_template(template_name)
+        template = env.get_template(template_id)
     else:
         template = env.from_string(template_source)
     render_context: Dict[str, Any] = {"resume": resume}
-    render_context["variables"] = template_variables or {}
-    return template.render(**render_context)
+    render_context["variables"] = payload.template_variables or {}
+    html_content = template.render(**render_context)
 
+    if not html_content:
+        raise HTTPException(status_code=404, detail="Template rendering failed")
 
-@template_router.post("/{template_name}/render/{resume_name}")
-async def render_template_endpoint(
-    resume_name: str,
-    template_name: str,
-    payload: RenderRequest = Body(default=None),
-    storage: LocalDocumentStorage = Depends(get_storage),
-):
-    resume = storage.get_resume(resume_name=resume_name)
-    if not resume:
-        return JSONResponse(status_code=404, content={"message": "Resume not found"})
+    if "text/html" in accept_header:
+        storage.save_rendered_html(
+            html_content, render_id=f"{payload.resume_id}_{template_id}"
+        )
+        location_url = f"/renders/htmls/{payload.resume_id}_{template_id}.html"
+        headers = {"Location": location_url}
+        return Response(content=html_content, media_type="text/html", headers=headers)
 
-    html = _render_template_to_html(
-        template_name,
-        resume_name,
-        payload.template_variables,
-        storage,
-    )
-    return JSONResponse(content={"html": html})
+    if "application/pdf" in accept_header:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
+            page = await browser.new_page()
+            await page.set_content(
+                html_content, wait_until="networkidle"
+            )  # allow CSS/fonts to load
+            pdf_bytes = await page.pdf(
+                format="A4", print_background=True
+            )  # keep colors
+            await browser.close()
+        storage.save_rendered_pdf(
+            pdf_bytes, render_id=f"{payload.resume_id}_{template_id}"
+        )
+        location_url = f"/renders/pdfs/{payload.resume_id}_{template_id}.pdf"
+        headers = {"Location": location_url}
+        return Response(
+            content=pdf_bytes, media_type="application/pdf", headers=headers
+        )
 
-
-# TODO: it might make sense to implement an endpoint that returns both HTML and PDF together
-@template_router.post("/{template_name}/render/{resume_name}/pdf")
-async def render_template_pdf_endpoint(
-    resume_name: str,
-    template_name: str,
-    payload: RenderRequest = Body(default=None),
-    storage: LocalDocumentStorage = Depends(get_storage),
-):
-    if sys.platform.startswith("win"):
-        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-
-    resume = storage.get_resume(resume_name=resume_name)
-    if not resume:
-        return JSONResponse(status_code=404, content={"message": "Resume not found"})
-
-    html_content = _render_template_to_html(
-        template_name,
-        resume_name,
-        payload.template_variables,
-        storage,
-    )
-
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        page = await browser.new_page()
-        await page.set_content(
-            html_content, wait_until="networkidle"
-        )  # allow CSS/fonts to load
-        pdf_bytes = await page.pdf(format="A4", print_background=True)  # keep colors
-        await browser.close()
-
-    return Response(content=pdf_bytes, media_type="application/pdf")
+    raise HTTPException(status_code=406, detail="Not Acceptable")

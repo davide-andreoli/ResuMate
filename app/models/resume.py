@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from datetime import date
 
 import yaml
@@ -10,17 +10,28 @@ from app.models.skill import Skill
 from app.models.certification import Certification
 from app.models.project import Project
 from app.models.langauge import Language
-from app.models.cv_item import short_id
-from typing import TypeAlias, Union
+from app.models.utils import short_id
+from typing import TypeAlias, Union, Sequence
 
 ResumeElement: TypeAlias = Union[
     Link, Skill, Experience, Education, Certification, Project, Language
 ]
 
 
+class ResumeDetails(BaseModel):
+    name: str
+    id: str
+    updated_at: date
+    display_name: str
+
+    def __str__(self) -> str:
+        return f"{self.display_name} (ID: {self.id}, Last Updated: {self.updated_at})"
+
+
 class Resume(BaseModel):
     id: str = Field(default_factory=lambda: short_id("res_"))
     name: str
+    display_name: str
     date_of_birth: date
     title: Optional[str] = None
     email: Optional[EmailStr] = "mail@example.com"
@@ -37,6 +48,14 @@ class Resume(BaseModel):
     projects: List[Project] = Field(default_factory=list[Project])
     languages: List[Language] = Field(default_factory=list[Language])
     schema_version: int = 1
+
+    def get_details(self) -> ResumeDetails:
+        return ResumeDetails(
+            name=self.name,
+            id=self.id,
+            display_name=self.display_name,
+            updated_at=self.updated_at,
+        )
 
     def visible_only(self) -> "Resume":
         """
@@ -78,10 +97,45 @@ class Resume(BaseModel):
         ]
         return filtered
 
-    def update_element_by_id(self, element_id: str, new_element: ResumeElement) -> bool:
+    def update_element_by_id(
+        self, element_id: str, new_element: Dict[str, Any]
+    ) -> bool:
         """
         Update an element in the resume by its ID.
         Returns True if the element was found and updated, False otherwise.
+        """
+
+        collections: Sequence[Sequence[ResumeElement]] = [
+            self.links,
+            self.skills,
+            self.experience,
+            self.education,
+            self.certifications,
+            self.projects,
+            self.languages,
+        ]
+
+        for collection in collections:
+            for idx, element in enumerate(collection):
+                if element.id == element_id:
+                    safe_updates = {
+                        k: v
+                        for k, v in new_element.items()
+                        if k not in ["id", "created_at", "updated_at", "schema_version"]
+                    }
+                    try:
+                        updated_element = element.model_copy(update=safe_updates)
+                    except Exception as e:
+                        raise ValueError(f"Invalid update: {e}")
+                    collection[idx] = updated_element
+                    self.updated_at = date.today()
+                    return True
+        return False
+
+    def get_element_by_id(self, element_id: str) -> Optional[ResumeElement]:
+        """
+        Retrieve an element from the resume by its ID.
+        Returns the element if found, or None if not found.
         """
         collections = [
             self.links,
@@ -94,12 +148,10 @@ class Resume(BaseModel):
         ]
 
         for collection in collections:
-            for idx, element in enumerate(collection):
+            for element in collection:
                 if getattr(element, "id", None) == element_id:
-                    collection[idx] = new_element
-                    self.updated_at = date.today()
-                    return True
-        return False
+                    return element
+        return None
 
     def dump_to_yaml_string(self) -> str:
         data = self.model_dump(mode="json", exclude_none=True)

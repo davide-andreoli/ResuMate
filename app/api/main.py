@@ -6,7 +6,7 @@ from app.api.routes.resume import resume_router
 from app.api.routes.template import template_router
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
