@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from datetime import date
 
 import yaml
@@ -11,7 +11,7 @@ from app.models.certification import Certification
 from app.models.project import Project
 from app.models.langauge import Language
 from app.models.utils import short_id
-from typing import TypeAlias, Union
+from typing import TypeAlias, Union, Sequence
 
 ResumeElement: TypeAlias = Union[
     Link, Skill, Experience, Education, Certification, Project, Language
@@ -97,12 +97,15 @@ class Resume(BaseModel):
         ]
         return filtered
 
-    def update_element_by_id(self, element_id: str, new_element: ResumeElement) -> bool:
+    def update_element_by_id(
+        self, element_id: str, new_element: Dict[str, Any]
+    ) -> bool:
         """
         Update an element in the resume by its ID.
         Returns True if the element was found and updated, False otherwise.
         """
-        collections = [
+
+        collections: Sequence[Sequence[ResumeElement]] = [
             self.links,
             self.skills,
             self.experience,
@@ -114,10 +117,17 @@ class Resume(BaseModel):
 
         for collection in collections:
             for idx, element in enumerate(collection):
-                if getattr(element, "id", None) == element_id:
-                    old_id = getattr(element, "id", None)
-                    new_element.id = old_id
-                    collection[idx] = new_element
+                if element.id == element_id:
+                    safe_updates = {
+                        k: v
+                        for k, v in new_element.items()
+                        if k not in ["id", "created_at", "updated_at", "schema_version"]
+                    }
+                    try:
+                        updated_element = element.model_copy(update=safe_updates)
+                    except Exception as e:
+                        raise ValueError(f"Invalid update: {e}")
+                    collection[idx] = updated_element
                     self.updated_at = date.today()
                     return True
         return False

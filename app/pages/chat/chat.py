@@ -29,9 +29,19 @@ def change_resume(options: List[str]):
     )
 
 
+@st.dialog("Change Template", on_dismiss="rerun")
+def change_template(options: List[str]):
+    st.session_state.selected_template = st.selectbox(
+        "Choose from your templates",
+        options,
+        index=options.index(st.session_state.selected_template),
+    )
+
+
 st.title("Chat")
 
 resume_list = requests.get("http://127.0.0.1:8000/resumes").json()
+template_list = requests.get("http://127.0.0.1:8000/templates").json()
 
 if not resume_list:
     st.info("No resumes found. Please create a resume first in the Resume section.")
@@ -39,6 +49,9 @@ if not resume_list:
 
 if "selected_resume" not in st.session_state:
     st.session_state.selected_resume = resume_list[0] if resume_list else None
+
+if "selected_template" not in st.session_state:
+    st.session_state.selected_template = template_list[0] if template_list else None
 
 if st.query_params.get("conversation_id"):
     conversation_id = st.query_params["conversation_id"]
@@ -77,7 +90,17 @@ with context_container:
         if st.button("Change Resume"):
             # TODO: The change resume button should open a modal with resume cards to select from
             change_resume(resume_list)
-
+    col3, col4 = st.columns([3, 1])
+    with col3:
+        if st.session_state.selected_template:
+            st.markdown(
+                f"**Selected Template:** {st.session_state.selected_template['display_name']}"
+            )
+        else:
+            st.markdown("**No template selected**")
+    with col4:
+        if st.button("Change Template"):
+            change_template(template_list)
 
 prompt = st.chat_input("Say something")
 if prompt:
@@ -96,6 +119,9 @@ if prompt:
             "conversation_id": conversation_id,
             "resume_id": st.session_state.selected_resume["id"]
             if st.session_state.selected_resume
+            else None,
+            "template_id": st.session_state.selected_template["id"]
+            if st.session_state.selected_template
             else None,
         },
         stream=True,

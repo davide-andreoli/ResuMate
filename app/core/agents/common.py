@@ -15,6 +15,7 @@ class SupervisorRuntimeContext:
 
     document_storage: LocalDocumentStorage
     resume_id: Optional[str] = None
+    template_id: Optional[str] = None
 
 
 class ModelHandoff(BaseModel):

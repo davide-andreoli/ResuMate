@@ -11,6 +11,8 @@ from app.core.agents.common import (
     ModelHandoff,
 )
 from app.core.agents.resume_content_editor import ResumeContentEditorAgentProvider
+from app.core.agents.resume_template_editor import ResumeTemplateEditorAgentProvider
+from app.core.agents.resume_creator import ResumeCreatorAgentProvider
 from typing import AsyncGenerator, List, Optional
 import logging
 
@@ -28,6 +30,8 @@ class ResumateAgentRunner:
         self.registered_agents_providers: List[ResumateAgentProvider] = [
             WelcomeAgentProvider(),
             ResumeContentEditorAgentProvider(),
+            ResumeTemplateEditorAgentProvider(),
+            ResumeCreatorAgentProvider(),
         ]
         self.current_agent: Agent[SupervisorRuntimeContext, str | ModelHandoff] = (
             self.registered_agents_providers[0].build(
@@ -51,6 +55,7 @@ class ResumateAgentRunner:
         memory: BaseMemory,
         conversation_id: str,
         resume_id: Optional[str] = None,
+        template_id: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         message_history_adapter = ModelMessagesTypeAdapter.validate_python(
             message_history
@@ -59,7 +64,9 @@ class ResumateAgentRunner:
             user_prompt=user_prompt,
             message_history=message_history_adapter,
             deps=SupervisorRuntimeContext(
-                document_storage=self.document_storage, resume_id=resume_id
+                document_storage=self.document_storage,
+                resume_id=resume_id,
+                template_id=template_id,
             ),
         ) as response:
             async for text in response.stream_output():
@@ -130,6 +137,7 @@ class ResumateAgentRunner:
         memory: BaseMemory,
         conversation_id: str,
         resume_id: Optional[str] = None,
+        template_id: Optional[str] = None,
         max_handoffs: int = 5,
     ) -> AsyncGenerator[str, None]:
         handoff_count = 0
@@ -141,6 +149,7 @@ class ResumateAgentRunner:
                 memory=memory,
                 conversation_id=conversation_id,
                 resume_id=resume_id,
+                template_id=template_id,
             ):
                 yield chunk
 

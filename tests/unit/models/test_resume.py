@@ -3,7 +3,7 @@ from datetime import date
 import yaml
 from app.models.resume import Resume, ResumeDetails
 from app.models.skill import Skill
-from typing import Callable, cast
+from typing import cast
 
 
 def test_load_resume_from_yaml(test_resume_file: str):
@@ -59,19 +59,17 @@ def test_get_element_by_id_not_found(test_resume_file: str):
     assert element is None
 
 
-def test_update_element_by_id(test_resume_file: str, make_skill: Callable[..., Skill]):
+def test_update_element_by_id(test_resume_file: str):
     resume = Resume.load_from_yaml_string(test_resume_file)
-    new_skill = make_skill(name="Python", level="Expert")
-    resume.update_element_by_id("ski_pjfqsp7a", new_skill)
+    resume.update_element_by_id("ski_pjfqsp7a", {"name": "Python", "level": "Expert"})
     updated_skill: Skill = cast(Skill, resume.get_element_by_id("ski_pjfqsp7a"))
     assert updated_skill.name == "Python"
     assert updated_skill.level == "Expert"
 
 
-def test_update_element_by_id_not_found(
-    test_resume_file: str, make_skill: Callable[..., Skill]
-):
+def test_update_element_by_id_not_found(test_resume_file: str):
     resume = Resume.load_from_yaml_string(test_resume_file)
-    new_skill = make_skill(name="Python", level="Expert")
-    result = resume.update_element_by_id("non_existent_id", new_skill)
+    result = resume.update_element_by_id(
+        "non_existent_id", {"name": "Python", "level": "Expert"}
+    )
     assert result is False

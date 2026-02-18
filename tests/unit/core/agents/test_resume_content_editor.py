@@ -25,7 +25,7 @@ def test_resume_content_editor_agent_provider(
     assert provider.name == "resume_content_editor"
     assert (
         provider.description
-        == "A specialist agent that helps users improve their resume content."
+        == "A specialist agent that helps users improve their resume content by modifying existing elements and improving them."
     )
 
     agent = provider.build(default_model_config, "agents_list")

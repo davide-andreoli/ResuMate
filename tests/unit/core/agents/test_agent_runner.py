@@ -22,7 +22,7 @@ def test_resumate_agent_runner_initialization(
 
     runner = ResumateAgentRunner(config=default_model_config)
     assert runner.config == default_model_config
-    assert len(runner.registered_agents_providers) == 2
+    assert len(runner.registered_agents_providers) == 4
     assert runner.current_agent is not None
     assert runner.pending_handoff is None
 

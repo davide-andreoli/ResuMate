@@ -39,12 +39,12 @@ def test_edit_resume_content(
         ..., RunContext[SupervisorRuntimeContext]
     ],
     test_resume_file: str,
-    make_skill: Callable[..., Skill],
 ):
     context = test_supervisor_runtime_context(resume_id="res_ndzi76id")
     context.deps.document_storage.save_resume(test_resume_file, "res_ndzi76id")
-    skill = make_skill(name="Python", level="Expert")
-    result = edit_resume_content(context, "ski_pjfqsp7a", skill)
+    result = edit_resume_content(
+        context, "ski_pjfqsp7a", {"name": "Python", "level": "Expert"}
+    )
     assert result == "Resume content updated successfully."
     resume = context.deps.document_storage.get_resume("res_ndzi76id")
     updated_skill: Skill = cast(Skill, resume.get_element_by_id("ski_pjfqsp7a"))
@@ -57,11 +57,11 @@ def test_edit_resume_content_no_resume_selected(
     test_supervisor_runtime_context: Callable[
         ..., RunContext[SupervisorRuntimeContext]
     ],
-    make_skill: Callable[..., Skill],
 ):
     context = test_supervisor_runtime_context(resume_id=None)
-    skill = make_skill(name="Python", level="Expert")
-    result = edit_resume_content(context, "ski_pjfqsp7a", skill)
+    result = edit_resume_content(
+        context, "ski_pjfqsp7a", {"name": "Python", "level": "Expert"}
+    )
     assert result == "No resume selected."
 
 
@@ -70,10 +70,10 @@ def test_edit_resume_content_element_not_found(
         ..., RunContext[SupervisorRuntimeContext]
     ],
     test_resume_file: str,
-    make_skill: Callable[..., Skill],
 ):
     context = test_supervisor_runtime_context(resume_id="res_ndzi76id")
     context.deps.document_storage.save_resume(test_resume_file, "res_ndzi76id")
-    skill = make_skill(name="Python", level="Expert")
-    result = edit_resume_content(context, "non_existent_id", skill)
+    result = edit_resume_content(
+        context, "non_existent_id", {"name": "Python", "level": "Expert"}
+    )
     assert result == "Failed to update resume content."

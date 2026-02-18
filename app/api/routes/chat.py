@@ -13,6 +13,7 @@ class ChatRequest(BaseModel):
     request: str
     conversation_id: str
     resume_id: Optional[str] = None
+    template_id: Optional[str] = None
 
 
 @chat_router.post("/", response_class=StreamingResponse)
@@ -31,5 +32,6 @@ async def chat_endpoint(
             memory=memory,
             conversation_id=chat_request.conversation_id,
             resume_id=chat_request.resume_id,
+            template_id=chat_request.template_id,
         )
     )

@@ -67,6 +67,4 @@ Settings are managed with Pydantic Settings, you can find below the comprehensiv
 ## Roadmap
 
 - Planned features:
-  - add template expert agent
   - add job search agent
-  - add resume creation agent
