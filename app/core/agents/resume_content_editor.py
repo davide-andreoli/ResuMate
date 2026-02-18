@@ -4,8 +4,8 @@ from app.core.agents.common import (
     ResumateAgentProvider,
     SupervisorRuntimeContext,
 )
-from app.models.resume import ResumeElement
 from pydantic_ai import Agent, RunContext, Tool
+from typing import Any, Dict
 
 
 RESUME_CONTENT_EDITOR_AGENT_PROMPT = """
@@ -34,14 +34,14 @@ def read_resume_content(context: RunContext[SupervisorRuntimeContext]) -> str:
 def edit_resume_content(
     context: RunContext[SupervisorRuntimeContext],
     element_id: str,
-    new_content: ResumeElement,
+    new_content: Dict[str, Any],
 ) -> str:
     """
     Edits the content of a specific element in a resume.
 
     Args:
         element_id (str): The unique identifier of the resume element to be updated.
-        new_content (ResumeElement): The new content to replace the existing element.
+        new_content (Dict[str, Any]): A dict containing the keys and new values for the resume element. For example, {"description": "Updated job description"}.
 
     Returns:
         str: A message indicating whether the resume content was updated successfully or if the update failed.
@@ -59,7 +59,7 @@ def edit_resume_content(
 
 class ResumeContentEditorAgentProvider(ResumateAgentProvider):
     name = "resume_content_editor"
-    description = "A specialist agent that helps users improve their resume content."
+    description = "A specialist agent that helps users improve their resume content by modifying existing elements and improving them."
 
     def build(
         self, config: ModelConfig, agents_list: str
